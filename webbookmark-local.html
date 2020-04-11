@@ -1,0 +1,535 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>webbookmark-owner</title>
+<style type="text/css">
+img {
+	display:inline;
+	height:1em;
+	width:1em;
+}
+body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
+#foldermenu, #itemmenu {
+	display: None;
+	width: max-content;
+	position: fixed;
+	color: black;
+	background-color: #E0E0E0;
+	opacity: 1.0;
+	z-index: 1;
+	font-size:small;
+}
+
+#mod {
+	display: none;
+	height: 100%;
+	width: 100%;
+	top: 0; 
+	left: 0;
+	opacity: 0.9;
+	background-color: yellow;
+	position: fixed;
+	flex-direction: column;
+	justify-content: center;
+	align-items:center;
+}
+h5{margin:0;
+	padding:0;}
+li,ul{list-style:none;}
+#ifm{
+height:80%;
+width:100%;	
+}
+</style>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+	var matchHtmlRegExp = /["'&<>]/
+		function escapeHtml (string) {
+		  var str = '' + string
+		  var match = matchHtmlRegExp.exec(str)
+
+		  if (!match) {
+		    return str
+		  }
+
+		  var escape
+		  var html = ''
+		  var index = 0
+		  var lastIndex = 0
+
+		  for (index = match.index; index < str.length; index++) {
+		    switch (str.charCodeAt(index)) {
+		      case 34: // "
+		        escape = '&quot;'
+		        break
+		      case 38: // &
+		        escape = '&amp;'
+		        break
+		      case 39: // '
+		        escape = '&#39;'
+		        break
+		      case 60: // <
+		        escape = '&lt;'
+		        break
+		      case 62: // >
+		        escape = '&gt;'
+		        break
+		      default:
+		        continue
+		    }
+
+		    if (lastIndex !== index) {
+		      html += str.substring(lastIndex, index)
+		    }
+
+		    lastIndex = index + 1
+		    html += escape
+		  }
+
+		  return lastIndex !== index
+		    ? html + str.substring(lastIndex, index)
+		    : html
+		}
+	
+	function valid_url(str){
+		let r=new RegExp("^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$");
+		return r.test(str);
+		
+	}
+	// 发送内容到后端
+	var old_name = '', old_url = '', new_name = '', new_url = '',
+	lang='zh', //使用的语言
+	mod, // 遮罩层
+	modi,// 待修改的文件夹或书签 原始的事件对象
+	chd = false, // 内容是否变更，且未保存
+	add = false, // 是否为新增
+	add_folder = true,// 新建的内容类型 true folder:false item
+	ifm, // 内容窗格
+	mn, // 菜单
+	menue, // 菜单是否存在
+	menuh, // 菜单的事件handle
+	rm_notified=false;
+	xmlhttp=new XMLHttpRequest();
+	
+	
+	const up_max=65536; //最多字符数 2**16
+	const up_len_err=new Map([['zh','最多允许65536个字符(2^16),请删除不必要的书签或使用简短的名称，如有其他事情，可先保存至本地'],
+		['en','at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.']]);
+	const url_err=new Map([['zh','网址为空或包含不允许的字符或格式错误，请修改'],['en','url is blank or contains illegal chars & fomart']]);
+	const svr_err=new Map([['zh','服务器内部故障，请发送邮件至1575658778@qq.com'],['en','server internal error,please email to 1575658778@qq.com']]);
+	const name_err=new Map([['zh','名称为空，请输入名称'],['en','name is blank']]);
+	const success=new Map([['zh','上传成功'],['en','Upload finished']]);
+	const saved_err=new Map([['zh','文件未保存，请先保存，若要放弃保存直接关闭页面'],['en','File is not saved,please save it at first.If you don\'t want to save,close Tab-page directly.']]);
+	const root_count_err=new Map([['zh','出现多于一个根目录，如果您会编辑html，请保存网页至本地后修改；或直接删除根文件夹的子文件夹（书签数据将消失！）；或将网页保存至本地，将文件用邮件发送至1575658778@qq.com'],
+		['en','There are more than one root in the bookmark area. If you\'re able to edit html，please save it locally and modify it; or remove the root\'s subfolder(all bookmarks will be removed; or save webpage locally and email it to 1575658778@qq.com.']]);
+	const rm_ntc=new Map([['zh','账户的内容将被清空，建议您保留一份内容到本地，点击取消后，可以保存文件至本地，再次点击"清除账户"，完成清除'],
+		['en','All content of this account will be removed, save the webpage locally might be proper, click the "Close Account" again to finish it.']]);
+	const root=new Map([['zh','<ul><h5>根文件夹</h5></ul>'],['en','<ul><h5>root folder</h5></ul>']])
+	//const url_err=new Map([['zh',''],['en','']]);
+
+
+	function savelocal(){
+		let scp=document.getElementsByTagName("script")[0];
+		let p=scp.parentElement;
+		p.removeChild(scp);
+	}
+	function showinfo(txt){
+		$(mod).css({'display':"flex"});
+		$(mod).children("div").hide();
+		$(mod).find("#cnfm").hide();
+		$("#errmsg").html(txt);
+		$("#errmsg").show();
+	}
+
+	function get_default_lang(){
+		let la=navigator.language||navigator.userLanguage;
+		la=la.substr(0, 2);
+		if(la == 'zh'){
+			lang='zh';
+	      }else{
+			lang='en';
+	      }
+	}
+
+
+	function sendtobackground() {
+		if(chd){
+		let up=$("#ifm").clone();
+		$(up).find("img").remove();
+		up=$(up).html();
+		if(up.lengh>up_max){
+			showinfo(up_len_err.get(lang));
+		}
+		up= JSON.stringify(up);
+		$.ajax({
+			url : 'http://127.0.0.1:8000/user/cu', 
+			type : 'post',
+			data :up,
+			cache : false,
+			processData : false,
+			contentType : false,
+			async : true,
+		}).done(function(xhr, status, error) {
+/*
+U_P_ERR='0' # 用户名或密码错误
+SUCCESS='1' # 登录成功
+IP_FORBID='2' # 错误失败次数过多，禁止访问
+SVR_ERR='3' # 服务器内部故障
+U_RPT_ERR='4' # 用户名重复
+LEN_ERR='5' # 内容超出允许的最大长度
+CNT_ROOT_ERR='6' # 出现多于一个根
+*/	
+			switch(xhr){
+			case '1':
+				showinfo(success.get(lang));
+				chd=false;
+				break;
+			case '5':
+				showinfo(up_len_err.get(lang));
+				break;
+			case '6':
+				showinfo(root_count_err.get(lang));
+				break;
+			default:
+				showinfo(xhr);
+				break;
+			}
+		}).fail(function(xhr, status, error) {
+			showinfo(svr_err.get(lang));
+		});
+		}
+	}
+	
+	function ck_st(){
+		if(xmlhttp.readyState==4){
+			if(xmlhttp.status==200){
+			ifm.innerHTML=	xmlhttp.responseText;
+			addimg("#ifm li");
+			}
+			else{
+			ifm.innerHTML=root.get(lang);
+			}
+		}
+	}	
+	
+	function ck_v(n){
+		let cki=document.cookie;
+		let cki_a=cki.split(":");
+		let cki_p;
+		for(let i=0;i<cki_a.length;i++){
+		cki_p=cki_a[i].split("=");
+		if(cki_p[0]==n){
+			return cki_p[1];
+		}
+		}
+		return null;
+	}
+	
+	function ck_lang() {
+			console.log("ck_lang");
+			let e2;
+			let e = window.event.target;
+			if(e.nodeName=='DIV'){return;}
+			console.log(e);
+			e.style.color='white';
+			e.style.background='black';
+			// $(e.target).css({'background':'black','color':'white'});
+			lang = e.getAttribute('id');
+			switch (lang) {
+			case 'zh':
+				e2=document.getElementById("en");	
+				// $("#en").css({'background':'white','color':'black'});
+				$(".en").hide();
+				$(".zh").show();
+				break;
+			case 'en':
+				e2=document.getElementById("zh");	
+				// $("#zh").css({'background':'white','color':'black'});
+				$(".zh").hide();
+				$(".en").show();
+				break;
+			}
+			e2.style.color='black';
+			e2.style.background='white';
+		}
+	
+	window.onload=function (){
+		ifm=document.getElementById("ifm");
+		ifm.onclick=menu;
+		
+		if(ifm.childElementCount==0){
+		if(ck_v('login')!=1) {
+			location.href='index.html';
+			return;
+			}
+		}
+		$("#mod input").each(function(i,e){$(e).focus(function(){$("#errmsg").text=""})})
+		mod = document.getElementById("mod");
+		
+
+		
+		// 选择语言
+		var lgc=document.getElementById("lg");	
+		lgc.onclick=ck_lang;
+		get_default_lang();
+		console.log("lang"+lang);
+		document.getElementById(lang).click();
+		
+		if(ifm.childElementCount==0){
+		xmlhttp.onreadystatechange=ck_st;
+		let src=location.search.substring(1);
+		console.log("src:"+src);
+		xmlhttp.open("GET",'/c/'+ src,true);
+		xmlhttp.send();}
+
+	}
+	
+	// 菜单处理
+	function displaymenu(e) {
+		if (!menue) {
+			$(e).show(100, 'linear');
+			menue= false;
+			menuh = setTimeout(function() {
+				let m = $(e);
+				menuNotExist = true;
+				m.hide();
+			}, 5 * 1000);
+		}
+	};
+
+	function menu(e) {
+		modi = e.target.parentElement;
+		e.preventDefault();
+		if (e.target.nodeName == "H5") {
+			mn = $("#foldermenu");
+		} else if (e.target.nodeName == "IMG") {
+			mn = $("#itemmenu");
+		} else {
+			return null;
+		}
+		let x = e.clientX;
+		let y = e.clientY;
+		mn.css("left", x + 'px');
+		mn.css('top', y + 'px');
+		displaymenu(mn);
+	}
+	
+	function hidemenu(){
+		menue=false;
+		window.clearTimeout(menuh);
+		$(mn).hide();
+	}
+
+	// 处理图像
+	function imgerr(e){
+		let im=e.srcElement;
+		e.src="global.svg";
+		e.onerror=null;
+	}
+
+	function addimg(e){
+		$(e).each(function(n,ee){
+		let src=$(ee).find("a").attr("href");
+		let i=src.indexOf("//");
+		if(i==-1){
+			i=0;
+		 }else{
+			i=i+3;
+		 }
+		 i=src.indexOf("/",i);
+		 if(i==-1){
+			 src=src+'/';
+		 }else{
+			 src=src.substring(0,i+1);
+		 }
+		 $(ee).prepend("<img src='" +src+ "favicon.ico'"+
+				 "onerror=\"imgerr(this);\"/>");
+		})
+	}
+	// 显示新增
+	function dadd(e) {
+		hidemenu();
+		mod.style.display = "flex";
+		old_name = old_url = '';
+		add = true;
+		$("#url").val(old_url);
+		$("#name").val(old_name);
+		if (e.getAttribute("id") == "makefolder") {
+			$("#urlm").hide();
+			add_folder = true;
+		} else {
+			$("#urlm").show();
+			add_folder = false;
+		}
+	}
+	// 显示修改
+	function dmod(e) {
+		hidemenu();
+		add=false;
+		let i;
+		mod.style.display = "flex";
+		if (modi.tagName == "LI") {
+			i = $(modi).children("a")[0];
+			old_url = $(i).attr("href");
+			$("#url").val(old_url);
+		} else {
+			i = $(modi).children("h5")[0];
+			$("#urlm").hide();
+			old_url=new_url='';
+		}
+			old_name = $(i).text();
+			$("#name").val(old_name);
+	}
+	// 取消
+	function cnl(){
+		mod.style.display = "none";
+	}
+	// 完成
+	function hmod() {
+		mod.style.display = "none";
+		new_name = $("#name").val();
+		if(!new_name){
+			$("#errmsg").text=name_err.get(lang);
+			return null;
+		}
+		new_name=escapeHtml(new_name);
+		if (add) {
+			if (add_folder) {
+				$(modi).append("<ul><h5>" + new_name + "</h5></ul>");
+			} else {
+				new_url = $("#url").val();
+				if(!new_url||!valid_url(new_url)) {
+					$("#errmsg").text=url_err.get(lang);
+					return null;
+					}
+				$(modi).append(
+						"<li><a href=\""+new_url+"\">" + new_name + "</a></li>");
+				let l=$(modi).find("li:last");
+				addimg(l);
+			}
+				chd = true;
+		} else {
+			if (new_name != old_name || new_url != old_url) {
+				let i;
+				if(old_url){
+				new_url = $("#url").val();
+				if(!new_url||!valid_url(new_url)) {
+					$("#errmsg").text=url_err.get(lang);
+					return null;
+					}
+				i = $(modi).children("a")[0];
+				$(i).attr({href:new_url});	
+				}else{
+				i = $(modi).children("h5")[0];
+				}
+				$(i).text(new_name);
+				chd = true;
+			}
+		}
+	}
+	// 折叠文件夹
+	function cps(event) {
+		hidemenu();
+		$(modi).children("li").hide();
+		$(modi).children("ul").hide();
+	}
+	// 展开文件夹
+	function xpd(event) {
+		hidemenu();
+		$(modi).children("li").show();
+		$(modi).children("ul").show();
+	}
+	// 删除文件夹或子书签
+	function del(event) {
+		hidemenu();
+		$(modi).remove();
+	}
+	// 登出
+	function logout(){
+		if(chd){
+			sendbacktoground();
+			if(chd){
+				return;
+			}
+		}
+		$.ajax({
+			url : 'http://127.0.0.1:8000/user/logout', 
+			type : 'post',
+			cache : false,
+			processData : false,
+			contentType : false,
+			async : true,
+		}).done(function(xhr, status, error) {
+			location.href='/index.html';
+	}).fail(function(){
+			let msg=svr_err.get(lang);
+			if(chd){
+				msg=msg+';'+saved_err.get(lang);
+			}
+			showinfo(msg);
+			}
+			)
+	}
+		
+	function rmv(){
+		if(!rm_notified){
+			rm_notified=true;
+			showinfo(rm_ntc.get(lang));
+			return;
+		}else{
+			$.ajax({
+				url : 'http://127.0.0.1:8000/user/del', 
+				type : 'post',
+				cache : false,
+				processData : false,
+				contentType : false,
+				async : true,
+			}).done(function(data,st,xhr) {
+				if(xhr.readyState==4&&(xhr.status==200||xhr.status==302)){
+				location.href='/index.html';}
+			}).fail(function(){
+				showinfo(svr_err.get(lang));
+				})
+		}	
+	}
+</script>
+</head>
+
+<body>
+<div id="lg">
+		<button id="en" style="color: black; background: white none repeat scroll 0% 0%;">English</button>
+		<button id="zh" style="color: white; background: black none repeat scroll 0% 0%;">中文</button>
+</div>
+	<input id="bckurl" type="hidden" value="/adjax_jz">
+	<input id="frmbck" type="hidden" value="/ajax_down">
+	<button onclick="sendtobackground();"><span class="zh">上传</span><span class="en" style="display: none;">Upload</span></button>
+	<button onclick="logout();"><span class="zh">退出</span><span class="en" style="display: none;">Log Out</span></button>
+	<button onclick="rmv();"><span class="zh">清除账户</span><span class="en" style="display: none;">Close Account</span></button>
+	<button onclick="savelocal();"><span class="zh">保存到本地</span><span class="en" style="display: none;">Save Locally</span></button>
+	<div id="ifm"><ul><h5>根文件夹</h5><ul><h5>搜索引擎</h5><li><img src="https://www.baidu.com/favicon.ico" onerror="imgerr(this);"><a href="https://www.baidu.com/">百度</a></li><li><img src="https://cn.bing.com/favicon.ico" onerror="imgerr(this);"><a href="https://cn.bing.com/?ensearch=1&amp;FORM=BEHPTB">必应</a></li><li><img src="global.svg" onerror="imgerr(this);"><a href="https://en.wikipedia.org/wiki/Main_Page">维基百科-English</a></li></ul><ul><h5>资源</h5><li><img src="https://www.jb51.net/favicon.ico" onerror="imgerr(this);"><a href="https://www.jb51.net/">脚本之家</a></li><li><img src="global.svg" onerror="imgerr(this);"><a href="https://www.ixueshu.com/">爱学术</a></li></ul></ul></div>
+	<div id="mod" style="display: none;">
+		<div>
+		<label><span class="zh">名称</span></label><span class="en" style="display: none;">name</span> <input id="name" type="text" value="" required="required">
+		</div>
+		<div id="urlm">
+			<label><span class="zh">网址</span><span class="en" style="display: none;">URL</span></label> <input id="url" type="url" value="" required="required">
+		</div>
+		<p id="errmsg" style="color: red"></p><p>
+		<button id="cnlb" onclick="cnl()"><span class="zh">取消</span><span class="en" style="display: none;">Cancel</span></button>
+		<button id="cnfm" onclick="hmod()"><span class="zh">已完成</span><span class="en" style="display: none;">OK</span></button>
+	</p></div>
+
+	<div id="foldermenu" style="left: 103px; top: 210px; display: none;">
+		<div id="makefolder" onclick="dadd(this);"><span class="zh">新建子文件夹</span><span class="en" style="display: none;">new subfolder</span></div>
+		<div id="makeitem" onclick="dadd(this);"><span class="zh">新建子书签</span><span class="en" style="display: none;">new bookmark</span></div>
+		<div id="deletefolder" onclick="del(this);"><span class="zh">删除此文件夹</span><span class="en" style="display: none;">delete folder</span></div>
+		<div id="modifyfolder" onclick="dmod(this);"><span class="zh">修改文件夹名称</span><span class="en" style="display: none;">modify folder name</span></div>
+		<div id="expandfolder" onclick="xpd(this);"><span class="zh">展开文件夹</span><span class="en" style="display: none;">expand</span></div>
+		<div id="collapsefolder" onclick="cps(this);"><span class="zh">折叠文件夹</span><span class="en" style="display: none;">collapse</span></div>
+	</div>
+
+	<div id="itemmenu">
+		<div id="delitm" onclick="del(this);"><span class="zh">删除此项</span><span class="en" style="display: none;">remove</span></div>
+		<div id="moditm" onclick="dmod(this);"><span class="zh">修改此项</span><span class="en" style="display: none;">modify</span></div>
+	</div>
+
+</body></html>

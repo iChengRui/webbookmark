@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"> 
+<title>webbookmark</title>
+<style type="text/css">
+body {
+	background-color: #FFFFFF;
+}
+
+#log {
+	position: fixed;
+	left: 40%;
+	top: 20%;
+	width: 20%;
+	height: auto;
+	min-width: 300px;
+	min-height: 180px;
+	background: #eeeeff;
+	margin: 0 auto;
+}
+#tips{display:none;}
+#errmsg {
+	margin: 0;
+}
+</style>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+	var lang; //language
+	var submited=true; //是否为提交，用于显示错误信息
+	const u_err=new Map([['zh','用户名'],['en','username']]);
+	const p_err=new Map([['zh','密码'],['en','password']]);
+	const fdbck_err=new Map([['zh','密码或用户名不符合要求或错误，请修改'],['en','username or password is wrong,modify it']]);
+	const svr_err=new Map([['zh','服务器内部故障，请发送邮件至1575658778@qq.com'],['en','server internal error,please email to 1575658778@qq.com']]);
+	const ip_err=new Map([['zh','此IP错误超过5次，请于24小时后访问'],['en','five times failure with this ip,please try again after 24 hours']]);
+	const len_err=new Map([['zh',' 字符数少于5个或多于12个'],['en',' chars are less than 5 or more than 12']]);
+	const rpt_err=new Map([['zh','此用户名已存在，请更换用户名'],['en','this username already exists.Please change another name.']]);
+	const consistency_err=new Map([['zh',' 两次输入的密码不一致，请重新输入'],['en',' two passwords entered are inconsistent,please enter again.']]);
+	
+	var regs=new RegExp("[^A-Za-z_0-9]");
+	var regp=new RegExp("(?=.*[A-Za-z])(?=.*\d)");
+	
+	function get_default_lang(){
+		let la=navigator.language||navigator.userLanguage;
+		la=la.substr(0, 2);
+		if(la == 'zh'){
+			lang='zh';
+	      }else{
+			lang='en';
+	      }
+	}
+function ck_lang() {
+		let e2;
+		let e = window.event.target;
+		if(e.nodeName=='DIV'){return;}
+		e.style.color='white';
+		e.style.background='black';
+		// $(e.target).css({'background':'black','color':'white'});
+		lang = e.getAttribute('id');
+		switch (lang) {
+		case 'zh':
+			e2=document.getElementById("en");	
+			// $("#en").css({'background':'white','color':'black'});
+			$(".en").hide();
+			$(".zh").show();
+			break;
+		case 'en':
+			e2=document.getElementById("zh");	
+			// $("#zh").css({'background':'white','color':'black'});
+			$(".zh").hide();
+			$(".en").show();
+			break;
+		}
+		e2.style.color='black';
+		e2.style.background='white';
+	}
+
+	
+window.onload=function(){	
+	var lgc=document.getElementById("lg");	
+		
+	// 选择语言
+	lgc.onclick= ck_lang;
+	get_default_lang();
+	document.getElementById(lang).click();
+
+	$(":input").change(function(){$("#errmsg").text('');});	
+	
+	$("input[name='way']").click(function() {
+		var w = $(this).val();
+		if (w == 'l') {
+			$("#cfm").hide();
+			$("#tips").hide();
+		} else {
+			$("#tips").show();
+			$("#cfm").show();
+		}
+	})
+	
+	$("#cfm").hide();
+	$("#tips").hide();
+	
+}
+	function Up() {
+		submited=true;
+		let up_url='http://127.0.0.1:8000/user/login'; 
+		var formData = new FormData(document.getElementById("form"));
+		
+		let user=$("input[name='username']").val();
+		if(user.length<5 ||user.length>12){
+			$("#errmsg").text(u_err.get(lang)+len_err.get(lang));
+			return;
+		}
+		let pwd=$("input[name='pwd']").val();
+		if(pwd.length<5 ||pwd.length>12){
+			$("#errmsg").text(p_err.get(lang)+len_err.get(lang));
+			return;
+		}
+		if(!regp.test(pwd)||!regs.test(pwd)){
+			$("#errmsg").text(fdbck_err.get(lang));
+			console.log("err");
+			return;
+		}
+		let w=$('#form input:radio[name="way"]:checked').val(); 
+		if(w=='r'){
+			let pwd2=$("input[name='pwd2']").val();
+			up_url='http://127.0.0.1:8000/user/reg';
+			if(pwd!=pwd2){
+				$("#errmsg").text(consistency_err.get(lang));
+				$("input[name='pwd']").val('');
+				$("input[name='pwd2']").val('');
+				return;
+			}
+		}
+		$.ajax({
+			url : up_url,
+			type : 'post',
+			data : formData,
+			cache : false,
+			processData : false,
+			contentType : false,
+			async : true,
+		}).done(function(res) {
+			
+			/* U_P_ERR='0' # 用户名或密码错误
+			* SUCCESS='1' # 登录成功
+			* IP_FORBID='2' # 错误失败次数过多，禁止访问
+			* SVR_ERR='3' # 服务器内部故障
+			* U_RPT_ERR='4' # 用户名重复
+			*/
+			console.log("res:"+res);
+			switch(res){
+			case 0:
+				$("#errmsg").text(fdbck_err.get(lang));
+				break;
+			case 1:
+				return false;
+			case 2:
+				$("#errmsg").text(ip_err.get(lang));
+				break;
+			case 3:
+				$("#errmsg").text(svr_err.get(lang));
+				break;
+			case 4:
+				$("#errmsg").text(rpt_err.get(lang));
+				$("input[name='username']").val('');
+				break;
+			default:
+				location.href="/owner.html?"+res;
+			}
+		}).fail(function(res) {
+			$("#errmsg").text(svr_err.get(lang));
+		});
+	};
+</script>
+</head>
+<body>
+	<div id="lg">
+		<button id="en">English</button>
+		<button id="zh">中文</button>
+	</div>
+	<div id="log">
+		<form id="form" ENCTYPE="multipart/form-data" method="post" onsubmit="return false">
+			<input type="radio" name="way" value="l" required><span class="en">login</span><span class="zh">登录</span>
+			<input type="radio" name="way" value="r" required><span class="en">sign up</span><span class="zh">注册</span>
+			<br>
+			<label class="en">username</label> <label class="zh">用户名</label>
+			<br> <input type="text" name="username" value="" required maxlength=12>
+			<div id="tips">
+			<p class="en">5 to 12 characters</p>
+			<p class="zh">5至12个字符</p>
+			</div>
+			<br> <label class="en">password</label> <label class="zh">密码</label>
+			<br> <input type="password" name="pwd" value="" required maxlength=12>
+			<br>
+			<div id="cfm">
+			<p class="en">5 to 12 characters (at least an alphabet,number and special char)</p>
+			<p class="zh">5至12个字符(至少包含一个字母、数字及特殊符号)</p>
+				<label class="en">Enter password again to confirm</label>
+				<label class="zh">再次输入密码以确认</label>
+				<br> <input type="password" name="pwd2" value="">
+			</div>
+			<h3 id="errmsg" style="color: red"></h3>
+			<br> <button onclick="Up()"><span class="en">submit</span><span class="zh">提交</span></button>
+			<br> <a href=""><span class="en">forget password</span> <span class="zh">忘记密码</span></a>
+		</form>
+	</div>
+
+</body>
+</html>

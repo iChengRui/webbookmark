@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>上传内容到后台并下载</title>
+<style type="text/css">
+img {
+	display:inline;
+	height:1em;
+	width:1em;
+}
+body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
+#foldermenu, #itemmenu {
+	display: None;
+	width: max-content;
+	position: fixed;
+	color: black;
+	background-color: #E0E0E0;
+	opacity: 1.0;
+	z-index: 1;
+	font-size:small;
+}
+
+#mod {
+	display: none;
+	height: 100%;
+	width: 100%;
+	top: 0; 
+	left: 0;
+	opacity: 0.9;
+	background-color: yellow;
+	position: fixed;
+	flex-direction: column;
+	justify-content: center;
+	align-items:center;
+}
+h5{margin:0;
+	padding:0;}
+li,ul{list-style:none;}
+#ifm{
+height:80%;
+width:100%;	
+}
+</style>
+<script src="jquery-3.1.1.min.js"></script>
+<script>
+	var matchHtmlRegExp = /["'&<>]/
+		function escapeHtml (string) {
+		  var str = '' + string
+		  var match = matchHtmlRegExp.exec(str)
+
+		  if (!match) {
+		    return str
+		  }
+
+		  var escape
+		  var html = ''
+		  var index = 0
+		  var lastIndex = 0
+
+		  for (index = match.index; index < str.length; index++) {
+		    switch (str.charCodeAt(index)) {
+		      case 34: // "
+		        escape = '&quot;'
+		        break
+		      case 38: // &
+		        escape = '&amp;'
+		        break
+		      case 39: // '
+		        escape = '&#39;'
+		        break
+		      case 60: // <
+		        escape = '&lt;'
+		        break
+		      case 62: // >
+		        escape = '&gt;'
+		        break
+		      default:
+		        continue
+		    }
+
+		    if (lastIndex !== index) {
+		      html += str.substring(lastIndex, index)
+		    }
+
+		    lastIndex = index + 1
+		    html += escape
+		  }
+
+		  return lastIndex !== index
+		    ? html + str.substring(lastIndex, index)
+		    : html
+		}
+	function valid_url(str){
+		let r=new RegExp("^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$");
+		return r.test(str);
+		
+	}
+	// 发送内容到后端
+	var old_name = '', old_url = '', new_name = '',
+	new_url = '',
+	mod, // 遮罩层
+	modi,// 待修改的文件夹或书签 原始的事件对象
+	chd = false, // 内容是否变更，且未保存
+	add = false, // 是否为新增
+	add_folder = true,// 新建的内容类型 true folder:false item
+	ifm, // 内容窗格
+	mn, // 菜单
+	menue, // 菜单是否存在
+	menuh; // 菜单的事件handle
+	xmlhttp=new XMLHttpRequest();
+	
+	window.onload=function (){
+		$("#ifm input").each(function(i,e){$(e).foucus(function(){$("#errmsg").text=""})})
+		mod = document.getElementById("mod");
+		ifm=document.getElementById("ifm");
+		xmlhttp.onreadystatechange=st_c;
+		let src=location.search.substring(1);
+		xmlhttp.open("GET",'/c/'+ src,true);
+		xmlhttp.send();
+		ifm.onclick=menu;
+	}
+	
+	// 菜单处理
+	function displaymenu(e) {
+		if (!menue) {
+			$(e).show(100, 'linear');
+			menue= false;
+			menuh = setTimeout(function() {
+				let m = $(e);
+				menuNotExist = true;
+				m.hide();
+			}, 5 * 1000);
+		}
+	};
+
+	function menu(e) {
+		modi = e.target.parentElement;
+		e.preventDefault();
+		if (e.target.nodeName == "H5") {
+			mn = $("#foldermenu");
+		} else if (e.target.nodeName == "IMG") {
+			mn = $("#itemmenu");
+		} else {
+			return null;
+		}
+		let x = e.clientX;
+		let y = e.clientY;
+		mn.css("left", x + 'px');
+		mn.css('top', y + 'px');
+		displaymenu(mn);
+	}
+	
+	function hidemenu(){
+		menue=false;
+		window.clearTimeout(menuh);
+		$(mn).hide();
+	}
+
+	// 处理图像
+	function imgerr(e){
+		let im=e.srcElement;
+		e.src="global.svg";
+		e.onerror=null;
+	}
+
+	function addimg(e){
+		$(e).each(function(n,ee){
+		let src=$(ee).find("a").attr("href");
+		let i=src.indexOf("//");
+		if(i==-1){
+			i=0;
+		 }else{
+			i=i+3;
+		 }
+		 i=src.indexOf("/",i);
+		 if(i==-1){
+			 src=src+'/';
+		 }else{
+			 src=src.substring(0,i+1);
+		 }
+		 $(ee).prepend("<img src='" +src+ "favicon.ico'"+
+				 "onerror=\"imgerr(this);\"/>");
+		})
+	}
+	// 折叠文件夹
+	function cps(event) {
+		hidemenu();
+		$(modi).children("li").hide();
+		$(modi).children("ul").hide();
+	}
+	// 展开文件夹
+	function xpd(event) {
+		hidemenu();
+		$(modi).children("li").show();
+		$(modi).children("ul").show();
+	}
+</script>
+</head>
+
+<body>
+	<input id="bckurl" type="hidden" value="/adjax_jz">
+	<input id="frmbck" type="hidden" value="/ajax_down">
+	<button onclick="sendtobackground();">上传</button>
+	<button onclick="ifm();">下载</button>
+	<button onclick="savelocal();">保存到本地</button>
+	<div id="ifm" ></div>
+
+	<div id="foldermenu">
+		<div id="makefolder" onclick="dadd(this);">新建子文件夹</div>
+		<div id="makeitem" onclick="dadd(this);">新建子书签</div>
+		<div id="deletefolder" onclick="del(this);">删除此文件夹</div>
+		<div id="modifyfolder" onclick="dmod(this);">修改文件夹名称</div>
+		<div id="expandfolder" onclick="xpd(this);">展开文件夹</div>
+		<div id="collapsefolder" onclick="cps(this);">折叠文件夹</div>
+	</div>
+
+	<div id="itemmenu">
+		<div id="delitm" onclick="del(this);">删除此项</div>
+		<div id="moditm" onclick="dmod(this);">修改此项</div>
+	</div>
+</body>
+</html>
