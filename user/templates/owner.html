@@ -20,6 +20,17 @@ body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
 	z-index: 1;
 	font-size:small;
 }
+#header {
+	top: 0; 
+	left: 0;
+	position: fixed;
+	display:inline;
+	width:100%;
+}
+#padder {
+	z-index:-99;
+	visibility:hidden;
+}
 
 #mod,#upf {
 	display: none;
@@ -34,15 +45,18 @@ body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
 	justify-content: center;
 	align-items:center;
 }
-h5{margin:0;
-	padding:0;}
+h5{margin:0; padding:0;}
 li,ul{list-style:none;}
-#ifm{
-height:80%;
-width:100%;	
-}
+#cntn{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:space-between;}
+#shrinfo {background-color: lightcyan;margin: 0;}
+#ifm{ width:100%;}
 </style>
-<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+
+<!--  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+-->
+
+<script src="/jQuery2.1.4.js"></script>
+
 <script>
 	var matchHtmlRegExp = /["'&<>]/
 		function escapeHtml (string) {
@@ -95,11 +109,11 @@ width:100%;
 	function valid_url(str){
 		let r=new RegExp("^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$");
 		return r.test(str);
-		
 	}
-	// 发送内容到后端
+	
 	var old_name = '', old_url = '', new_name = '', new_url = '',
-	lang='zh', //使用的语言
+	src, // 用户书签的地址
+	lang, // 使用的语言
 	mod, // 遮罩层
 	modi,// 待修改的文件夹或书签 原始的事件对象
 	chd = false, // 内容是否变更，且未保存
@@ -109,10 +123,11 @@ width:100%;
 	mn, // 菜单
 	menue, // 菜单是否存在
 	menuh, // 菜单的事件handle
+	shron=false, // 分享URL是否已显示
 	rm_notified=false;
 	xmlhttp=new XMLHttpRequest();
 	
-	
+	const shr_base="http:127.0.0.1/vistor?";
 	const up_max=65536; //最多字符数 2**16
 	const up_len_err=new Map([['zh','最多允许65536个字符(2^16),请删除不必要的书签或使用简短的名称，如有其他事情，可先保存至本地'],
 		['en','at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.']]);
@@ -121,16 +136,15 @@ width:100%;
 	const name_err=new Map([['zh','名称为空，请输入名称'],['en','name is blank']]);
 	const success=new Map([['zh','上传成功'],['en','Upload finished']]);
 	const saved_err=new Map([['zh','文件未保存，请先保存，若要放弃保存直接关闭页面'],['en','File is not saved,please save it at first.If you don\'t want to save,close Tab-page directly.']]);
-	//const root_count_err=new Map([['zh','出现多于一个根目录，如果您会编辑html，请保存网页至本地后修改；或直接删除根文件夹的子文件夹（书签数据将消失！）；或将网页保存至本地，将文件用邮件发送至1575658778@qq.com'],
-	//	['en','There are more than one root in the bookmark area. If you\'re able to edit html，please save it locally and modify it; or remove the root\'s subfolder(all bookmarks will be removed); or save webpage locally and email it to 1575658778@qq.com.']]);
 	const fmt_err=new Map([['zh','上传文件格式错误，请修改后上传'],['en','Format of uploaded file is not correct,modify and upload again']]);
 	const upf_ntc=new Map([['zh','文件上传中，若成功将更新页面，失败后会提示您'],['en','file is uploading. If succeed,page will be freshed; otherwise,notice will be shown.']]);
 	const rm_ntc=new Map([['zh','账户的内容将被清空，建议您保留一份内容到本地，点击取消后，可以保存文件至本地，再次点击"清除账户"，完成清除'],
 		['en','All content of this account will be removed, save the webpage locally might be proper, click the "Close Account" again to finish it.']]);
 	const root=new Map([['zh','<ul><h5>根文件夹</h5></ul>'],['en','<ul><h5>root folder</h5></ul>']])
+	const shr_url_err=new Map([['zh','书签正在上传或地址错误，无法分享'],['en','Bookmark is uploading or with wrong address, can not be shared.']]);
 	//const url_err=new Map([['zh',''],['en','']]);
 	
-	function UpLoadFile(){
+	function UploadFile(){
 		let uf=document.getElementById("upf");
 		uf.style.display='flex';
 	}
@@ -142,44 +156,49 @@ width:100%;
 	}
 	
 	function hupf(){
-		let formData = new FormData(document.getElementById("fm"));
+		let formData=new FormData($("#fm")[0]);
 		setTimeout(cnlupf,3*1000);
-              $.ajax({
-                  url: '/user/fu',
-                  type: 'post',
-                  data: formData,
-                  cache: false,
-                  processData: false,
-                  contentType: false,
-                  async: true,
-              }).done(function (res) {
-              switch(xhr){
-				case '5':
+		$("#shr").html(shr_url_err.get(lang));
+		chd=false;
+		  $.ajax({
+			url: '/user/fu',
+			type: 'post',
+			data: formData,
+			cache: false,
+			processData: false,
+			contentType: false,
+			async: true,
+		  }).done(function (res) {
+			  switch(res){
+				case 5:
 					showinfo(up_len_err.get(lang));
 					break;
-				case '6':
+				case 6:
 					showinfo(root_count_err.get(lang));
 					break;
-				case '7':
+				case 7:
 					showinfo(fmt_err.get(lang));
 					break;
 				default:
-				$.ajax({
-					url : 'http://127.0.0.1:8000/c/'+xhr, 
-					type : 'get',
-					cache : false,
-					processData : false,
-					contentType : false,
-					async : true,
-				}).done(function(xhr, status, error) {
-					ifm.innerHTML=	xhr.responseText;
-					}).fail(function(res){
-						showinfo(svr_err.get(lang));
-					  });    
+					$.ajax({
+						url : 'http://127.0.0.1:8000/c/'+res, 
+						type : 'get',
+						cache : false,
+						processData : false,
+						contentType : false,
+						async : true,
+						success:function(xhr, status, error) {
+							ifm.innerHTML=	xhr;
+							addimg("#ifm li");
+							rm_a("#ifm li");
+							$("#shr").html(shr_base+src);
+						},
+						error:function(res){ showinfo(svr_err.get(lang));}
+					});    
 				break;}
-              }).fail(function (res) {
-				showinfo(svr_err.get(lang));
-              });
+		  }).fail(function (res) {
+			showinfo(svr_err.get(lang));
+		  });
 	}
 	
 	function showinfo(txt){
@@ -193,22 +212,22 @@ width:100%;
 	function get_default_lang(){
 		let la=navigator.language||navigator.userLanguage;
 		la=la.substr(0, 2);
-		if(la == 'zh'){
-			lang='zh';
-	      }else{
+		lang='zh';
+		if(la != 'zh'){
 			lang='en';
-	      }
+		}
 	}
-
 
 	function sendtobackground() {
 		if(chd){
 		let up=$("#ifm").clone();
 		$(up).find("img").remove();
+		$(up).find("a").removeAttr("target");
 		up=$(up).html();
 		if(up.lengh>up_max){
 			showinfo(up_len_err.get(lang));
 		}
+		$("#shr").html(shr_url_err.get(lang));
 		up= JSON.stringify(up);
 		$.ajax({
 			url : 'http://127.0.0.1:8000/user/cu', 
@@ -230,14 +249,15 @@ CNT_ROOT_ERR='6' # 出现多于一个根
 FORMAT_ERR='7' # 上传文件格式错误
 */	
 			switch(xhr){
-			case '1':
+			case 1:
 				showinfo(success.get(lang));
+				$("#shr").html(shr_base+src);
 				chd=false;
 				break;
-			case '5':
+			case 5:
 				showinfo(up_len_err.get(lang));
 				break;
-			case '7':
+			case 7:
 				showinfo(fmt_err.get(lang));
 				break;
 			default:
@@ -250,14 +270,22 @@ FORMAT_ERR='7' # 上传文件格式错误
 		}
 	}
 	
+	function rm_a(ele){
+		$(ele).attr({target:"_blank"});
+	}
+	
 	function ck_st(){
 		if(xmlhttp.readyState==4){
 			if(xmlhttp.status==200){
 			ifm.innerHTML=	xmlhttp.responseText;
 			addimg("#ifm li");
-			}
-			else{
-			ifm.innerHTML=root.get(lang);
+			rm_a("#ifm li");
+			$("#shr").html(shr_base+src);
+			}else if(xmlhttp.status==304){
+				$("#shr").html(shr_base+src);
+			} else{
+				ifm.innerHTML=root.get(lang);
+				$("#shr").html(shr_url_err.get(lang));
 			}
 		}
 	}	
@@ -276,25 +304,20 @@ FORMAT_ERR='7' # 上传文件格式错误
 	}
 	
 	function ck_lang() {
-			console.log("ck_lang");
 			let e2;
 			let e = window.event.target;
 			if(e.nodeName=='DIV'){return;}
-			console.log(e);
 			e.style.color='white';
 			e.style.background='black';
-			// $(e.target).css({'background':'black','color':'white'});
 			lang = e.getAttribute('id');
 			switch (lang) {
 			case 'zh':
 				e2=document.getElementById("en");	
-				// $("#en").css({'background':'white','color':'black'});
 				$(".en").hide();
 				$(".zh").show();
 				break;
 			case 'en':
 				e2=document.getElementById("zh");	
-				// $("#zh").css({'background':'white','color':'black'});
 				$(".zh").hide();
 				$(".en").show();
 				break;
@@ -303,6 +326,27 @@ FORMAT_ERR='7' # 上传文件格式错误
 			e2.style.background='white';
 		}
 	
+	function ck(e){
+		if(chd)
+			{
+			e.preventDefault();
+			e.returnValue = '修改未提交;moidfication is not saved';
+			}
+	}
+	
+	function shrtgl(){
+		$("#shrinfo").toggle();
+		if(shron){
+			$("span.shroff").show();
+			$("span.shron").hide();
+			shron=false;
+		}else{
+			$("span.shron").show();
+			$("span.shroff").hide();
+			shron=true;
+		}
+	}
+	window.addEventListener("beforeunload",ck); 
 	window.onload=function (){
 		if(ck_v('login')!=1) {
 			location.href='index.html';
@@ -320,11 +364,16 @@ FORMAT_ERR='7' # 上传文件格式错误
 		get_default_lang();
 		document.getElementById(lang).click();
 		
+		// 导入自己的书签
 		xmlhttp.onreadystatechange=ck_st;
-		let src=location.search.substring(1);
+		src=location.search.substring(1);
 		xmlhttp.open("GET",'/c/'+ src,true);
 		xmlhttp.send();
-
+		
+		// 显示
+		$("#shrinfo").hide();
+		$("span.shroff").show();
+		$("span.shron").hide();
 	}
 	
 	// 菜单处理
@@ -347,6 +396,8 @@ FORMAT_ERR='7' # 上传文件格式错误
 			mn = $("#foldermenu");
 		} else if (e.target.nodeName == "IMG") {
 			mn = $("#itemmenu");
+		} else if(e.target.nodeName == "A"){
+			window.open($(e.target).attr("href"), '_blank').location;	
 		} else {
 			return null;
 		}
@@ -369,10 +420,8 @@ FORMAT_ERR='7' # 上传文件格式错误
 		e.src="global.svg";
 		e.onerror=null;
 	}
-
-	function addimg(e){
-		$(e).each(function(n,ee){
-		let src=$(ee).find("a").attr("href");
+	
+	function get_base(src){
 		let i=src.indexOf("//");
 		if(i==-1){
 			i=0;
@@ -383,12 +432,20 @@ FORMAT_ERR='7' # 上传文件格式错误
 		 if(i==-1){
 			 src=src+'/';
 		 }else{
-			 src=src.substring(0,i+1);
-		 }
+			src=src.substring(0,i+1);
+		}
+		return src;
+	}
+
+	function addimg(e){
+		$(e).each(function(n,ee){
+		let src=$(ee).find("a").attr("href");
+		src=get_base(src);
 		 $(ee).prepend("<img src='" +src+ "favicon.ico'"+
 				 "onerror=\"imgerr(this);\"/>");
 		})
 	}
+	
 	// 显示新增
 	function dadd(e) {
 		hidemenu();
@@ -449,6 +506,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 						"<li><a href=\""+new_url+"\">" + new_name + "</a></li>");
 				let l=$(modi).find("li:last");
 				addimg(l);
+				rm_a(l);
 			}
 				chd = true;
 		} else {
@@ -461,7 +519,11 @@ FORMAT_ERR='7' # 上传文件格式错误
 					return null;
 					}
 				i = $(modi).children("a")[0];
-				$(i).attr({href:new_url});	
+				$(i).attr({href:new_url});
+				if(new_url!=old_url){
+					let sr=new_url;
+					sr=get_base(sr);
+					$(modi).find("img").attr({src:sr})};
 				}else{
 				i = $(modi).children("h5")[0];
 				}
@@ -486,6 +548,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 	function del(event) {
 		hidemenu();
 		$(modi).remove();
+		chd=true;
 	}
 	// 登出
 	function logout(){
@@ -535,21 +598,43 @@ FORMAT_ERR='7' # 上传文件格式错误
 				})
 		}	
 	}
+	function hlp(){
+		window.open("/help.html", '_blank').location;	
+	}
 </script>
 </head>
 
 <body>
-<div id="lg">
-		<button id="en">English</button>
-		<button id="zh">中文</button>
-</div>
+<div id="header">
+<div id="cntn">
+	<div id="lg">
+			<button id="en">English</button>
+			<button id="zh">中文</button>
+	</div>
+	<div id="ctr">
 	<button onclick="sendtobackground();"><span class='zh'>同步至服务器</span><span class='en'>Sync to Server</span></button>
+	<button onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>Upload File</span></button>
 	<button onclick="logout();"><span class='zh'>退出</span><span class='en'>Log Out</span></button>
-	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Close Account</span></button>
-	<button onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>upload file</span></button>
+	<button onclick="hlp();"><span class='zh'>帮助</span><span class='en'>Help</span></button>
+	<button onclick="shrtgl();"><span class='zh'><span class='shroff'>显示</span><span class='shron'>隐藏</span>分享链接</span><span class='en'><span class='shroff'>Display</span><span class='shron'>Hide</span> share URL</span></button>
+	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Remove Account</span></button>
+	</div>
+</div>
+	
+</div>
+<div id="padder">
+<!-- 用于空出header的高度 -->
+<button ></button>
+</div>
+<div id='shrinfo'>
+	<label><span class="zh">用于分享的网址:</span><span class="en">URL for share:</span></label>
+	<p id="shr"></p>
+	<p><span class="zh">此链接与用户名绑定，不会因内容变化而变化</span><span class="en">This URL is associated with your username, won't change with modification of contents.</span>
+	<a href=""><span class="zh">转换为二维码</span><span class="en">make QR code</span></a>
+</div>
 	<div id="ifm" ></div>
 	<div id="upf">
-		<form id="fm">
+		<form id="fm" onsubmit="return false;" enctype="multipart/form-data">
 		<label><span class='zh'>文件地址</span></label><span class='en'>File Address</span> <input type="file" name='upfile' required="required">
 		<p id="errmsgf"></p>
 		<button onclick="cnlupf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>

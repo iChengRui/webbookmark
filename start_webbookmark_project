@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 #
 #启动测试使用的nginx
+#
+
+# 删除以前的日志
+rm ./*.log||true
+
 if [ $# -eq 0 ]||[ $1 = "nginx" ]
 then
 killall nginx||true

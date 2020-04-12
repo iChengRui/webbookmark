@@ -4,25 +4,45 @@
 <meta charset="utf-8"> 
 <title>webbookmark</title>
 <style type="text/css">
-body {
-	background-color: #FFFFFF;
+html,body{height: 100%;display: flex;justify-content: space-around;flex-direction: column;}
+li{margin: 1ex 0;}
+#slg_log{
+display:flex;
+flex-direction:row;
+flex-wrap:wrap;
+justify-content: space-around;
+align-items:start;
+}
+#log {
+	width:max-content;
+	background: #eeeeff;
+}
+#form{
+display:flex;
+flex-direction:column;
+flex-wrap:wrap;
+justify-content: space-around;
+align-items:start;
 }
 
-#log {
-	position: fixed;
-	left: 40%;
-	top: 20%;
-	width: 20%;
-	height: auto;
-	min-width: 300px;
-	min-height: 180px;
-	background: #eeeeff;
-	margin: 0 auto;
+#form > *{margin:1ex;}
+
+#slg{
+display:inline-block;
+width:max-content;
 }
+h3,h5{text-align:center;}
 #tips{display:none;}
 #errmsg {
 	margin: 0;
 }
+.ntc{
+color:green;
+font-size:small;
+margin:0;
+}
+#cfm>*{display:block;margin:1ex 0;}
+label{font-size:large;}
 </style>
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 <script>
@@ -37,36 +57,31 @@ body {
 	const rpt_err=new Map([['zh','此用户名已存在，请更换用户名'],['en','this username already exists.Please change another name.']]);
 	const consistency_err=new Map([['zh',' 两次输入的密码不一致，请重新输入'],['en',' two passwords entered are inconsistent,please enter again.']]);
 	
-	var regs=new RegExp("[^A-Za-z_0-9]");
-	var regp=new RegExp("(?=.*[A-Za-z])(?=.*\d)");
+	var regs=/[^A-Za-z_0-9]/;
+	var regp=/^(?=.*[A-Za-z])(?=.*\d).+/;
 	
 	function get_default_lang(){
 		let la=navigator.language||navigator.userLanguage;
 		la=la.substr(0, 2);
-		if(la == 'zh'){
-			lang='zh';
-	      }else{
-			lang='en';
-	      }
+		lang='zh';
+		if(la != 'zh'){ lang='en'; }
 	}
+
 function ck_lang() {
 		let e2;
 		let e = window.event.target;
 		if(e.nodeName=='DIV'){return;}
 		e.style.color='white';
 		e.style.background='black';
-		// $(e.target).css({'background':'black','color':'white'});
 		lang = e.getAttribute('id');
 		switch (lang) {
 		case 'zh':
 			e2=document.getElementById("en");	
-			// $("#en").css({'background':'white','color':'black'});
 			$(".en").hide();
 			$(".zh").show();
 			break;
 		case 'en':
 			e2=document.getElementById("zh");	
-			// $("#zh").css({'background':'white','color':'black'});
 			$(".zh").hide();
 			$(".en").show();
 			break;
@@ -77,7 +92,7 @@ function ck_lang() {
 
 	
 window.onload=function(){	
-	var lgc=document.getElementById("lg");	
+	var lgc=document.getElementById("lg");
 		
 	// 选择语言
 	lgc.onclick= ck_lang;
@@ -91,9 +106,11 @@ window.onload=function(){
 		if (w == 'l') {
 			$("#cfm").hide();
 			$("#tips").hide();
+			$("#form a").show();
 		} else {
 			$("#tips").show();
 			$("#cfm").show();
+			$("#form a").hide();
 		}
 	})
 	
@@ -118,7 +135,6 @@ window.onload=function(){
 		}
 		if(!regp.test(pwd)||!regs.test(pwd)){
 			$("#errmsg").text(fdbck_err.get(lang));
-			console.log("err");
 			return;
 		}
 		let w=$('#form input:radio[name="way"]:checked').val(); 
@@ -148,7 +164,6 @@ window.onload=function(){
 			* SVR_ERR='3' # 服务器内部故障
 			* U_RPT_ERR='4' # 用户名重复
 			*/
-			console.log("res:"+res);
 			switch(res){
 			case 0:
 				$("#errmsg").text(fdbck_err.get(lang));
@@ -179,32 +194,62 @@ window.onload=function(){
 		<button id="en">English</button>
 		<button id="zh">中文</button>
 	</div>
+	<h3 class="zh">每一种信息，都有它最合适的展现方式。</h3>
+	<h3 class="en">For every kind of message, there is a way to display.</h3>
+<div id='slg_log'>
+	<div id="slg">
+	<div class="zh">
+	<h5>特色</h5>
+	<ol>
+	<li>快速将您收集的内容链接分享给他人，变成在线书签</li>
+	<li>只需浏览器，不对任何厂商、平台、插件产生依赖,无需任何插件</li>
+	<li>操作简单，无需学习</li>
+	<li>公开、共享，适合需要分享、推广的内容</li>
+	<li>支持上传已有的书签</li>
+	<li>无联系，用户名可以任意取，如果不在页面提供联系信息，没有任何人能联系您</li>
+	</ol>
+	</div>
+	<div class="en">
+	<h5>Feature</h5>
+	<ol>
+		<li>Quickly share links to your collected content to others</li>
+		<li>Only web browser, no dependence on any vendor, platform, plug-in</li>
+		<li>Easy to operate, no need to learn</li>
+		<li>Open, shared, suitable for content that needs to be shared and promoted</li>
+		<li>Support for uploading existing bookmarks</li>
+		<li>connectionless, username can be random letters. If not provided in your own bookmark page, no one can contact</li>
+	</ol>
+	</div>
+	</div>
 	<div id="log">
 		<form id="form" ENCTYPE="multipart/form-data" method="post" onsubmit="return false">
-			<input type="radio" name="way" value="l" required><span class="en">login</span><span class="zh">登录</span>
-			<input type="radio" name="way" value="r" required><span class="en">sign up</span><span class="zh">注册</span>
-			<br>
-			<label class="en">username</label> <label class="zh">用户名</label>
-			<br> <input type="text" name="username" value="" required maxlength=12>
-			<div id="tips">
-			<p class="en">5 to 12 characters</p>
-			<p class="zh">5至12个字符</p>
+			<div id='rd'>
+				<input type="radio" name="way" value="l" checked required><span class="en">login</span><span class="zh">登录</span>
+				<input type="radio" name="way" value="r" required><span class="en">sign up</span><span class="zh">注册</span>
 			</div>
-			<br> <label class="en">password</label> <label class="zh">密码</label>
-			<br> <input type="password" name="pwd" value="" required maxlength=12>
-			<br>
+			<label class="en">username</label> <label class="zh">用户名</label>
+			<input type="text" name="username" value="" required maxlength=12>
+			<div id="tips">
+			<p class="en ntc">5 to 12 characters</p>
+			<p class="zh ntc">5至12个字符</p>
+			</div>
+			<label class="en">password</label> <label class="zh">密码</label>
+			<input type="password" name="pwd" value="" required maxlength=12>
 			<div id="cfm">
-			<p class="en">5 to 12 characters (at least an alphabet,number and special char)</p>
-			<p class="zh">5至12个字符(至少包含一个字母、数字及特殊符号)</p>
+			<p class="en ntc">5 to 12 characters (at least an alphabet,number and special char)</p>
+			<p class="zh ntc">5至12个字符(至少包含一个字母、数字及特殊符号)</p>
 				<label class="en">Enter password again to confirm</label>
 				<label class="zh">再次输入密码以确认</label>
-				<br> <input type="password" name="pwd2" value="">
+				<input type="password" name="pwd2" value="">
 			</div>
 			<h3 id="errmsg" style="color: red"></h3>
-			<br> <button onclick="Up()"><span class="en">submit</span><span class="zh">提交</span></button>
-			<br> <a href=""><span class="en">forget password</span> <span class="zh">忘记密码</span></a>
+			<button onclick="Up()"><span class="en">submit</span><span class="zh">提交</span></button>
+			<a href="/password.html"><span class="en">forget password</span> <span class="zh">忘记密码</span></a>
 		</form>
 	</div>
-
+</div>
+<h3></h3>
+<h3></h3>
+<div></div>
 </body>
 </html>

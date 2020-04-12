@@ -46,8 +46,9 @@ pwdptn=re.compile(pwdpattern)
 
 gc_verify_container_tag={'li','ul','h5'}
 gc_escape_char=re.compile("<|\"|>|'")
-gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$")
+# gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=#]+$")
 gc_img=re.compile(r"<img.+?>",re.DOTALL)
+gc_a_target=re.compile(r"target\s*?=.+?_blank\s*?\"|'",re.DOTALL|re.A|re.I)
 
 
 m=str.maketrans({'"':"&quot;","'":"&#39;",'<':'&lt;','>':'&gt;','&':'&amp;'})
@@ -160,7 +161,7 @@ def  uname_m_fname(uname):
     return s.hexdigest()
 
 def escape_char(cnt):
-    return cnt.stranslate(m)
+    return cnt.translate(m)
     
 
 def verify_html(str_l):
@@ -213,7 +214,8 @@ def verify_html(str_l):
                     if len(attr)!=1 or \
                         not attr.has_key("href") or \
                         gc_escape_char.search(child_href.text) or \
-                        not gc_url.match(attr["href"]):
+                        not URL_CHECK(attr["href"]):
+                        # not gc_url.match(attr["href"]):
                         raise ValueError
                 else:    
                     raise ValueError
@@ -242,9 +244,8 @@ def verify_bookmark(cnt):
     """
     将浏览器导出的书签（html格式）转换为所需的格式
     """
-    html_content=html_content.split('\n')
+    html_content=cnt.split('\n')
 
-    
     html_frag=list()
     
     startheader="<ul><h5>"
@@ -253,7 +254,7 @@ def verify_bookmark(cnt):
     
     starthref='<li><a href="'
     endhref='">'
-    endhref_tail='</a>'
+    endhref_tail='</a></li>'
     html_content_len=len(html_content)
     
     header_level=0
@@ -261,6 +262,7 @@ def verify_bookmark(cnt):
     while(j<html_content_len):
         i=html_content[j].strip('  \n')
         if len(i)<3:
+            j+=1
             continue
         if i[:4]=="<DT>":
             #书签或文件夹名
@@ -270,7 +272,13 @@ def verify_bookmark(cnt):
                 if href_p==-1:
                     raise ValueError
                 href=i[13:href_p]
-                if not gc_url.match(href):
+                # if href[-1]=='/':
+                #     href=href[:-1]
+                # if not gc_url.match(href):
+                # if not URL_CHECK(href):
+                try:
+                    URL_CHECK(href)
+                except Exception:
                     raise ValueError
                 #书签名称
                 bkmk_name=i.find(">",href_p)
@@ -281,11 +289,12 @@ def verify_bookmark(cnt):
                 html_frag.extend((starthref,href,endhref,bkmk_name,endhref_tail))
             elif i[4:7]=="<H3":
             #文件夹名称
-                html_frag.append(startheader) 
+                html_frag.append(startheader)
+                h5_start=i.find(">",7) 
                 h5=i.rfind("</H3>")
-                if h5==-1:
+                if h5==-1 or h5_start==-1 or h5_start>h5:
                     raise ValueError
-                h5=i[8:h5]
+                h5=i[h5_start+1:h5]
                 h5=escape_char(h5)
                 html_frag.append(h5) 
                 html_frag.append(endheader) 
@@ -309,14 +318,21 @@ def verify_bookmark(cnt):
             h5=escape_char(h5)
             html_frag.append(h5) 
             html_frag.append(endheader) 
-            j+=1
-            i=html_content[j].strip('  \n')
-            if i!="<DL><p>":
-                raise ValueError
+            while True:
+                j+=1
+                i=html_content[j].strip('  \n')
+                if not i:
+                    continue
+                elif i!="<DL><p>":
+                    raise ValueError
+                else:
+                    break
         else:
             pass    
         j+=1
-    if header_level<1:
+    if header_level<0:
+        # print("header_level:"+str(header_level))
+        # print(''.join(html_frag))
         raise ValueError
     else:
         html_frag.append(endheader_tail*header_level)
@@ -328,7 +344,7 @@ def fupdate(req):
     通过上传文件取得书签
     """
     uf=req.FILES["upfile"]
-    content=uf.read().strip()
+    content=uf.read().strip().decode(encoding="utf-8")
     uf.close()
     if len(content)<19:
         return HttpResponse(LEN_ERR, content_type='application/json')
@@ -341,6 +357,8 @@ def fupdate(req):
     if content[:4]=="<ul>":
         # 删除img标签
         content=gc_img.sub('',content)
+        # 删除a标签的target属性
+        content=gc_a_target.sub('',content)
         str_l=[content]
         if content_update(str_l,req.user.username):
             return HttpResponse('"'+str_l[1]+'"', content_type='application/json')
