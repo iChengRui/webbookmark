@@ -20,7 +20,20 @@ body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
 	z-index: 1;
 	font-size:small;
 }
-
+#header {
+	top: 0; 
+	left: 0;
+	position: fixed;
+	display:inline;
+	width:100%;
+}
+#padder {
+	z-index:-999;
+}
+#lg{
+float:left;}
+#ctr{
+float:right;}
 #mod,#upf {
 	display: none;
 	height: 100%;
@@ -230,14 +243,14 @@ CNT_ROOT_ERR='6' # 出现多于一个根
 FORMAT_ERR='7' # 上传文件格式错误
 */	
 			switch(xhr){
-			case '1':
+			case 1:
 				showinfo(success.get(lang));
 				chd=false;
 				break;
-			case '5':
+			case 5:
 				showinfo(up_len_err.get(lang));
 				break;
-			case '7':
+			case 7:
 				showinfo(fmt_err.get(lang));
 				break;
 			default:
@@ -303,6 +316,16 @@ FORMAT_ERR='7' # 上传文件格式错误
 			e2.style.background='white';
 		}
 	
+	
+	function ck(e){
+		if(chd)
+			{
+			e.preventDefault();
+			e.returnValue = '修改未提交;moidfication is not saved';
+			}
+	}
+	
+	window.addEventListener("beforeunload",ck); 
 	window.onload=function (){
 		if(ck_v('login')!=1) {
 			location.href='index.html';
@@ -539,14 +562,23 @@ FORMAT_ERR='7' # 上传文件格式错误
 </head>
 
 <body>
-<div id="lg">
-		<button id="en">English</button>
-		<button id="zh">中文</button>
-</div>
+<div id="header">
+	<div id="lg">
+			<button id="en">English</button>
+			<button id="zh">中文</button>
+	</div>
+	<div id="ctr">
 	<button onclick="sendtobackground();"><span class='zh'>同步至服务器</span><span class='en'>Sync to Server</span></button>
 	<button onclick="logout();"><span class='zh'>退出</span><span class='en'>Log Out</span></button>
 	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Close Account</span></button>
 	<button onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>upload file</span></button>
+	<button onclick="UploadFile();"><span class='zh'>帮助</span><span class='en'>Help</span></button>
+	</div>
+</div>
+<div id="padder">
+<!-- 用于空出header的高度 -->
+<button ></button>
+</div>
 	<div id="ifm" ></div>
 	<div id="upf">
 		<form id="fm">

@@ -3,6 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <title>webbookmark-help</title>
+<style>
+p{display:none;}
+</style>
+<script>
+	function get_default_lang(){
+		let la=navigator.language||navigator.userLanguage;
+		la=la.substr(0, 2);
+		if(la == 'zh'){
+			lang='zh';
+	      }else{
+			lang='en';
+	      }
+		let e=document.getElementsByClassName(la)[0];
+		e.style.display="flex";
+	}
+	window.onload=get_default_lang;
+</script>
 </head>
 <body>
 <p class='en'></p>
@@ -23,6 +40,8 @@
 <p>将您的书签及账户名从本网站服务器中删除，如果您需要这些书签，请注意先保存到本地</p>
 <h5>上传文件</h5>
 <p>当您想把自己已有的(从浏览器中导出的)书签上传，变成在线书签时，可以使用此功能。注意"将覆盖已有的书签",而不是将其添加到已有的书签中。或者当本服务器崩溃，导致无法上传时，仅限在PC端的浏览器，您可以保存书签到本地，需2-3分钟，等待后续上传。</p>
+<h5>忘记密码</h5>
+<p><a href="/password.html">请点击这里</a></p>
 </p>
 </body>
 </html>
