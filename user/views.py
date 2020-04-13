@@ -328,7 +328,7 @@ def fupdate(req):
     通过上传文件取得书签
     """
     uf=req.FILES["upfile"]
-    content=uf.read().strip()
+    content=uf.read().strip().decode(encoding="utf-8")
     uf.close()
     if len(content)<19:
         return HttpResponse(LEN_ERR, content_type='application/json')

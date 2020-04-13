@@ -28,12 +28,10 @@ body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
 	width:100%;
 }
 #padder {
-	z-index:-999;
+	z-index:-99;
+	visibility:hidden;
 }
-#lg{
-float:left;}
-#ctr{
-float:right;}
+
 #mod,#upf {
 	display: none;
 	height: 100%;
@@ -47,15 +45,20 @@ float:right;}
 	justify-content: center;
 	align-items:center;
 }
-h5{margin:0;
-	padding:0;}
+h5{margin:0; padding:0;}
 li,ul{list-style:none;}
+#cntn{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:space-between;}
+#shrinfo > *{display:inline;}
 #ifm{
-height:80%;
 width:100%;	
 }
 </style>
-<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+
+<!--  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+-->
+
+<script src="/jQuery2.1.4.js"></script>
+
 <script>
 	var matchHtmlRegExp = /["'&<>]/
 		function escapeHtml (string) {
@@ -134,8 +137,6 @@ width:100%;
 	const name_err=new Map([['zh','名称为空，请输入名称'],['en','name is blank']]);
 	const success=new Map([['zh','上传成功'],['en','Upload finished']]);
 	const saved_err=new Map([['zh','文件未保存，请先保存，若要放弃保存直接关闭页面'],['en','File is not saved,please save it at first.If you don\'t want to save,close Tab-page directly.']]);
-	//const root_count_err=new Map([['zh','出现多于一个根目录，如果您会编辑html，请保存网页至本地后修改；或直接删除根文件夹的子文件夹（书签数据将消失！）；或将网页保存至本地，将文件用邮件发送至1575658778@qq.com'],
-	//	['en','There are more than one root in the bookmark area. If you\'re able to edit html，please save it locally and modify it; or remove the root\'s subfolder(all bookmarks will be removed); or save webpage locally and email it to 1575658778@qq.com.']]);
 	const fmt_err=new Map([['zh','上传文件格式错误，请修改后上传'],['en','Format of uploaded file is not correct,modify and upload again']]);
 	const upf_ntc=new Map([['zh','文件上传中，若成功将更新页面，失败后会提示您'],['en','file is uploading. If succeed,page will be freshed; otherwise,notice will be shown.']]);
 	const rm_ntc=new Map([['zh','账户的内容将被清空，建议您保留一份内容到本地，点击取消后，可以保存文件至本地，再次点击"清除账户"，完成清除'],
@@ -143,7 +144,7 @@ width:100%;
 	const root=new Map([['zh','<ul><h5>根文件夹</h5></ul>'],['en','<ul><h5>root folder</h5></ul>']])
 	//const url_err=new Map([['zh',''],['en','']]);
 	
-	function UpLoadFile(){
+	function UploadFile(){
 		let uf=document.getElementById("upf");
 		uf.style.display='flex';
 	}
@@ -155,44 +156,46 @@ width:100%;
 	}
 	
 	function hupf(){
-		let formData = new FormData(document.getElementById("fm"));
+		//let formData = new FormData(document.getElementById("fm"));
+		let formData=new FormData($("#fm")[0]);
 		setTimeout(cnlupf,3*1000);
-              $.ajax({
-                  url: '/user/fu',
-                  type: 'post',
-                  data: formData,
-                  cache: false,
-                  processData: false,
-                  contentType: false,
-                  async: true,
-              }).done(function (res) {
-              switch(xhr){
-				case '5':
+		  $.ajax({
+			  url: '/user/fu',
+			  type: 'post',
+			  data: formData,
+			  cache: false,
+			  processData: false,
+			  contentType: false,
+			  async: true,
+		  }).done(function (res) {
+			  switch(res){
+				case 5:
 					showinfo(up_len_err.get(lang));
 					break;
-				case '6':
+				case 6:
 					showinfo(root_count_err.get(lang));
 					break;
-				case '7':
+				case 7:
 					showinfo(fmt_err.get(lang));
 					break;
 				default:
-				$.ajax({
-					url : 'http://127.0.0.1:8000/c/'+xhr, 
-					type : 'get',
-					cache : false,
-					processData : false,
-					contentType : false,
-					async : true,
-				}).done(function(xhr, status, error) {
-					ifm.innerHTML=	xhr.responseText;
-					}).fail(function(res){
-						showinfo(svr_err.get(lang));
-					  });    
+					$.ajax({
+						url : 'http://127.0.0.1:8000/c/'+res, 
+						type : 'get',
+						cache : false,
+						processData : false,
+						contentType : false,
+						async : true,
+					}).done(function(xhr, status, error) {
+						ifm.innerHTML=	xhr.responseText;
+						$("#shrinfo").show();
+						}).fail(function(res){
+							showinfo(svr_err.get(lang));
+						  });    
 				break;}
-              }).fail(function (res) {
-				showinfo(svr_err.get(lang));
-              });
+		  }).fail(function (res) {
+			showinfo(svr_err.get(lang));
+		  });
 	}
 	
 	function showinfo(txt){
@@ -563,6 +566,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 
 <body>
 <div id="header">
+<div id="cntn">
 	<div id="lg">
 			<button id="en">English</button>
 			<button id="zh">中文</button>
@@ -571,20 +575,24 @@ FORMAT_ERR='7' # 上传文件格式错误
 	<button onclick="sendtobackground();"><span class='zh'>同步至服务器</span><span class='en'>Sync to Server</span></button>
 	<button onclick="logout();"><span class='zh'>退出</span><span class='en'>Log Out</span></button>
 	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Close Account</span></button>
-	<button onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>upload file</span></button>
+	<button onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>Upload File</span></button>
 	<button onclick="UploadFile();"><span class='zh'>帮助</span><span class='en'>Help</span></button>
 	</div>
-	<input type="url">
-	<p><span class="zh">与用户名绑定，唯一值不会因内容变化而变动</span><span class="en">Associated with your username, won't change with modification of contents.</span>
+	</div>
+	<div id='shrinfo'>
+	<label><span class="zh">用于分享的网址:</span><span class="en">URL for share:</span></label><p id="shr"></p>
+	<p><span class="zh">此链接与用户名绑定，不会因内容变化而变化</span><span class="en">This URL is associated with your username, won't change with modification of contents.</span>
 	<a href=""><span class="zh">转换为二维码</span><span class="en">make QR code</span></a>
+</div>
 </div>
 <div id="padder">
 <!-- 用于空出header的高度 -->
 <button ></button>
+<input type="url">
 </div>
 	<div id="ifm" ></div>
 	<div id="upf">
-		<form id="fm">
+		<form id="fm" onsubmit="return false;" enctype="multipart/form-data">
 		<label><span class='zh'>文件地址</span></label><span class='en'>File Address</span> <input type="file" name='upfile' required="required">
 		<p id="errmsgf"></p>
 		<button onclick="cnlupf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
