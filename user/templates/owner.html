@@ -111,11 +111,11 @@ width:100%;
 	function valid_url(str){
 		let r=new RegExp("^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$");
 		return r.test(str);
-		
 	}
-	// 发送内容到后端
+	
 	var old_name = '', old_url = '', new_name = '', new_url = '',
-	lang='zh', //使用的语言
+	src, // 用户书签的地址
+	lang, // 使用的语言
 	mod, // 遮罩层
 	modi,// 待修改的文件夹或书签 原始的事件对象
 	chd = false, // 内容是否变更，且未保存
@@ -128,7 +128,7 @@ width:100%;
 	rm_notified=false;
 	xmlhttp=new XMLHttpRequest();
 	
-	
+	const shr_base="http:127.0.0.1/vistor?";
 	const up_max=65536; //最多字符数 2**16
 	const up_len_err=new Map([['zh','最多允许65536个字符(2^16),请删除不必要的书签或使用简短的名称，如有其他事情，可先保存至本地'],
 		['en','at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.']]);
@@ -179,6 +179,7 @@ width:100%;
 					showinfo(fmt_err.get(lang));
 					break;
 				default:
+					src=res;
 					$.ajax({
 						url : 'http://127.0.0.1:8000/c/'+res, 
 						type : 'get',
@@ -188,6 +189,7 @@ width:100%;
 						async : true,
 					}).done(function(xhr, status, error) {
 						ifm.innerHTML=	xhr.responseText;
+						$("#shr").html(shr_base+src);
 						$("#shrinfo").show();
 						}).fail(function(res){
 							showinfo(svr_err.get(lang));
@@ -274,6 +276,8 @@ FORMAT_ERR='7' # 上传文件格式错误
 			}
 			else{
 			ifm.innerHTML=root.get(lang);
+			$("#shr").html(shr_base+src);
+			$("#shrinfo").show();
 			}
 		}
 	}	
@@ -334,6 +338,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 			location.href='index.html';
 			return;
 			}
+		$("#shrinfo").hide();
 		$("#mod input").each(function(i,e){$(e).focus(function(){$("#errmsg").text=""})})
 		mod = document.getElementById("mod");
 		
@@ -347,7 +352,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 		document.getElementById(lang).click();
 		
 		xmlhttp.onreadystatechange=ck_st;
-		let src=location.search.substring(1);
+		src=location.search.substring(1);
 		xmlhttp.open("GET",'/c/'+ src,true);
 		xmlhttp.send();
 
