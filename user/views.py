@@ -48,6 +48,7 @@ gc_verify_container_tag={'li','ul','h5'}
 gc_escape_char=re.compile("<|\"|>|'")
 gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$")
 gc_img=re.compile(r"<img.+?>",re.DOTALL)
+gc_a_target=re.compile(r"target\s*?=.+?_blank\s*?\"|'",re.DOTALL|re.A|re.I)
 
 
 m=str.maketrans({'"':"&quot;","'":"&#39;",'<':'&lt;','>':'&gt;','&':'&amp;'})
@@ -341,6 +342,8 @@ def fupdate(req):
     if content[:4]=="<ul>":
         # 删除img标签
         content=gc_img.sub('',content)
+        # 删除a标签的target属性
+        content=gc_a_target.sub('',content)
         str_l=[content]
         if content_update(str_l,req.user.username):
             return HttpResponse('"'+str_l[1]+'"', content_type='application/json')

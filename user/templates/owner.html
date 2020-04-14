@@ -211,11 +211,10 @@ width:100%;
 	function get_default_lang(){
 		let la=navigator.language||navigator.userLanguage;
 		la=la.substr(0, 2);
-		if(la == 'zh'){
-			lang='zh';
-	      }else{
+		lang='zh';
+		if(la != 'zh'){
 			lang='en';
-	      }
+		}
 	}
 
 
@@ -223,10 +222,12 @@ width:100%;
 		if(chd){
 		let up=$("#ifm").clone();
 		$(up).find("img").remove();
+		$(up).find("a").removeAttr("target");
 		up=$(up).html();
 		if(up.lengh>up_max){
 			showinfo(up_len_err.get(lang));
 		}
+		$("#shrinfo").hide();
 		up= JSON.stringify(up);
 		$.ajax({
 			url : 'http://127.0.0.1:8000/user/cu', 
@@ -250,6 +251,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 			switch(xhr){
 			case 1:
 				showinfo(success.get(lang));
+				$("#shrinfo").show();
 				chd=false;
 				break;
 			case 5:
@@ -268,16 +270,23 @@ FORMAT_ERR='7' # 上传文件格式错误
 		}
 	}
 	
+	function rm_a(ele){
+		$(ele).attr({target:"_blank"});
+	}
+	
 	function ck_st(){
 		if(xmlhttp.readyState==4){
 			if(xmlhttp.status==200){
 			ifm.innerHTML=	xmlhttp.responseText;
 			addimg("#ifm li");
-			}
-			else{
-			ifm.innerHTML=root.get(lang);
+			rm_a("#ifm li");
 			$("#shr").html(shr_base+src);
 			$("#shrinfo").show();
+			}else if(xmlhttp.status==304){
+				$("#shr").html(shr_base+src);
+				$("#shrinfo").show();
+			} else{
+				ifm.innerHTML=root.get(lang);
 			}
 		}
 	}	
@@ -296,25 +305,20 @@ FORMAT_ERR='7' # 上传文件格式错误
 	}
 	
 	function ck_lang() {
-			console.log("ck_lang");
 			let e2;
 			let e = window.event.target;
 			if(e.nodeName=='DIV'){return;}
-			console.log(e);
 			e.style.color='white';
 			e.style.background='black';
-			// $(e.target).css({'background':'black','color':'white'});
 			lang = e.getAttribute('id');
 			switch (lang) {
 			case 'zh':
 				e2=document.getElementById("en");	
-				// $("#en").css({'background':'white','color':'black'});
 				$(".en").hide();
 				$(".zh").show();
 				break;
 			case 'en':
 				e2=document.getElementById("zh");	
-				// $("#zh").css({'background':'white','color':'black'});
 				$(".zh").hide();
 				$(".en").show();
 				break;
@@ -378,6 +382,8 @@ FORMAT_ERR='7' # 上传文件格式错误
 			mn = $("#foldermenu");
 		} else if (e.target.nodeName == "IMG") {
 			mn = $("#itemmenu");
+		} else if(e.target.nodeName == "A"){
+			window.open($(e.target).attr("href"), '_blank').location;	
 		} else {
 			return null;
 		}
@@ -400,10 +406,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 		e.src="global.svg";
 		e.onerror=null;
 	}
-
-	function addimg(e){
-		$(e).each(function(n,ee){
-		let src=$(ee).find("a").attr("href");
+	function get_base(src){
 		let i=src.indexOf("//");
 		if(i==-1){
 			i=0;
@@ -414,8 +417,15 @@ FORMAT_ERR='7' # 上传文件格式错误
 		 if(i==-1){
 			 src=src+'/';
 		 }else{
-			 src=src.substring(0,i+1);
-		 }
+			src=src.substring(0,i+1);
+		}
+		return src;
+	}
+
+	function addimg(e){
+		$(e).each(function(n,ee){
+		let src=$(ee).find("a").attr("href");
+		src=get_base(src);
 		 $(ee).prepend("<img src='" +src+ "favicon.ico'"+
 				 "onerror=\"imgerr(this);\"/>");
 		})
@@ -480,6 +490,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 						"<li><a href=\""+new_url+"\">" + new_name + "</a></li>");
 				let l=$(modi).find("li:last");
 				addimg(l);
+				rm_a(l);
 			}
 				chd = true;
 		} else {
@@ -492,7 +503,11 @@ FORMAT_ERR='7' # 上传文件格式错误
 					return null;
 					}
 				i = $(modi).children("a")[0];
-				$(i).attr({href:new_url});	
+				$(i).attr({href:new_url});
+				if(new_url!=old_url){
+					let sr=new_url;
+					sr=get_base(sr);
+					$(modi).find("img").attr({src:sr})};
 				}else{
 				i = $(modi).children("h5")[0];
 				}
@@ -579,21 +594,21 @@ FORMAT_ERR='7' # 上传文件格式错误
 	<div id="ctr">
 	<button onclick="sendtobackground();"><span class='zh'>同步至服务器</span><span class='en'>Sync to Server</span></button>
 	<button onclick="logout();"><span class='zh'>退出</span><span class='en'>Log Out</span></button>
-	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Close Account</span></button>
+	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Remove Account</span></button>
 	<button onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>Upload File</span></button>
 	<button onclick="UploadFile();"><span class='zh'>帮助</span><span class='en'>Help</span></button>
 	</div>
-	</div>
-	<div id='shrinfo'>
-	<label><span class="zh">用于分享的网址:</span><span class="en">URL for share:</span></label><p id="shr"></p>
-	<p><span class="zh">此链接与用户名绑定，不会因内容变化而变化</span><span class="en">This URL is associated with your username, won't change with modification of contents.</span>
-	<a href=""><span class="zh">转换为二维码</span><span class="en">make QR code</span></a>
 </div>
+	
 </div>
 <div id="padder">
 <!-- 用于空出header的高度 -->
 <button ></button>
-<input type="url">
+</div>
+<div id='shrinfo'>
+	<label><span class="zh">用于分享的网址:</span><span class="en">URL for share:</span></label><p id="shr"></p>
+	<p><span class="zh">此链接与用户名绑定，不会因内容变化而变化</span><span class="en">This URL is associated with your username, won't change with modification of contents.</span>
+	<a href=""><span class="zh">转换为二维码</span><span class="en">make QR code</span></a>
 </div>
 	<div id="ifm" ></div>
 	<div id="upf">
