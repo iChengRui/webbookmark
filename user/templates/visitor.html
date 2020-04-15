@@ -54,6 +54,7 @@ li,ul{list-style:none;}
 height:80%;
 width:100%;	
 }
+#padder{visibility:hidden;}
 </style>
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 <script>
@@ -63,6 +64,7 @@ width:100%;
 	mn, // 菜单
 	menue, // 菜单是否存在
 	menuh, // 菜单的事件handle
+	trans=false, // 是否使用翻译内容
 	xmlhttp=new XMLHttpRequest();
 	
 	const root=new Map([['zh',"抱歉，您访问的书签已经被作者删除或书签链接有误"],['en',"Sorry，the bookmark does not exist, it might be removed by the owner or it's name is not correct."]]);
@@ -70,9 +72,7 @@ width:100%;
 	function get_default_lang(){
 		let la=navigator.language||navigator.userLanguage;
 		la=la.substr(0, 2);
-		if(la == 'zh'){
-			lang='zh';
-	      }else{
+		if(la != 'zh'){
 			lang='en';
 	      }
 	}
@@ -82,6 +82,8 @@ width:100%;
 			if(xmlhttp.status==200){
 			ifm.innerHTML=	xmlhttp.responseText;
 			addimg("#ifm li");
+			$("#ifm a").attr({target:"_blank"});
+			trans=false;
 			}
 			else{
 			ifm.innerHTML=root.get(lang);
@@ -110,6 +112,9 @@ width:100%;
 			}
 			e2.style.color='black';
 			e2.style.background='white';
+			if(trans){
+				ifm.innerHTML=root.get(lang);
+			}
 		}
 	
 	
@@ -126,6 +131,10 @@ width:100%;
 		
 		xmlhttp.onreadystatechange=ck_st;
 		let src=location.search.substring(1);
+		if(!src){
+			ifm.innerHTML=root.get(lang);
+			trans=true;
+		}
 		xmlhttp.open("GET",'/c/'+ src,true);
 		xmlhttp.send();
 
@@ -149,6 +158,8 @@ width:100%;
 		e.preventDefault();
 		if (e.target.nodeName == "H5") {
 			mn = $("#foldermenu");
+		} else if(e.target.nodeName == "A"){
+			window.open($(e.target).attr("href"), '_blank').location;	
 		} else {
 			return null;
 		}
@@ -220,7 +231,7 @@ width:100%;
 		$(modi).find("li").show();
 		$(modi).find("ul").show();
 	}
-
+</script>
 <body>
 	<div id="lg">
 			<button id="en">English</button>

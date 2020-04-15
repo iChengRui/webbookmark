@@ -125,6 +125,7 @@ width:100%;
 	mn, // 菜单
 	menue, // 菜单是否存在
 	menuh, // 菜单的事件handle
+	shron=false, // 分享URL是否已显示
 	rm_notified=false;
 	xmlhttp=new XMLHttpRequest();
 	
@@ -281,10 +282,8 @@ FORMAT_ERR='7' # 上传文件格式错误
 			addimg("#ifm li");
 			rm_a("#ifm li");
 			$("#shr").html(shr_base+src);
-			$("#shrinfo").show();
 			}else if(xmlhttp.status==304){
 				$("#shr").html(shr_base+src);
-				$("#shrinfo").show();
 			} else{
 				ifm.innerHTML=root.get(lang);
 			}
@@ -336,6 +335,18 @@ FORMAT_ERR='7' # 上传文件格式错误
 			}
 	}
 	
+	function shrtgl(){
+		$("#shrinfo").toggle();
+		if(shron){
+			$("span.shron").show();
+			$("span.shroff").hide();
+			shron=false;
+		}else{
+			$("span.shroff").show();
+			$("span.shron").hide();
+			shron=true;
+		}
+	}
 	window.addEventListener("beforeunload",ck); 
 	window.onload=function (){
 		if(ck_v('login')!=1) {
@@ -617,6 +628,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 		<p id="errmsgf"></p>
 		<button onclick="cnlupf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
 		<button onclick="hupf()"><span class='zh'>上传</span><span class='en'>upload</span></button>
+		<button onclick="shrtgl()"><span class='zh'><span class='shroff'>显示</span><span class='shron'>隐藏</span>分享链接</span><span class='en'><span class='shroff'>Display</span><span class='shron'>Hide</span> share URL</span></button>
 		</form>
 	</div>
 	<div id='mod'>
