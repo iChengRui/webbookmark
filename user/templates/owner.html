@@ -48,10 +48,8 @@ body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
 h5{margin:0; padding:0;}
 li,ul{list-style:none;}
 #cntn{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:space-between;}
-#shrinfo > *{display:inline;}
-#ifm{
-width:100%;	
-}
+#shrinfo {background-color: lightcyan;margin: 0;}
+#ifm{ width:100%;}
 </style>
 
 <!--  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -143,6 +141,7 @@ width:100%;
 	const rm_ntc=new Map([['zh','账户的内容将被清空，建议您保留一份内容到本地，点击取消后，可以保存文件至本地，再次点击"清除账户"，完成清除'],
 		['en','All content of this account will be removed, save the webpage locally might be proper, click the "Close Account" again to finish it.']]);
 	const root=new Map([['zh','<ul><h5>根文件夹</h5></ul>'],['en','<ul><h5>root folder</h5></ul>']])
+	const shr_url_err=new Map([['zh','书签正在上传或地址错误，无法分享'],['en','Bookmark is uploading or with wrong address, can not be shared.']]);
 	//const url_err=new Map([['zh',''],['en','']]);
 	
 	function UploadFile(){
@@ -157,17 +156,17 @@ width:100%;
 	}
 	
 	function hupf(){
-		//let formData = new FormData(document.getElementById("fm"));
 		let formData=new FormData($("#fm")[0]);
 		setTimeout(cnlupf,3*1000);
+		$("#shr").html(shr_url_err.get(lang));
 		  $.ajax({
-			  url: '/user/fu',
-			  type: 'post',
-			  data: formData,
-			  cache: false,
-			  processData: false,
-			  contentType: false,
-			  async: true,
+			url: '/user/fu',
+			type: 'post',
+			data: formData,
+			cache: false,
+			processData: false,
+			contentType: false,
+			async: true,
 		  }).done(function (res) {
 			  switch(res){
 				case 5:
@@ -191,7 +190,6 @@ width:100%;
 					}).done(function(xhr, status, error) {
 						ifm.innerHTML=	xhr.responseText;
 						$("#shr").html(shr_base+src);
-						$("#shrinfo").show();
 						}).fail(function(res){
 							showinfo(svr_err.get(lang));
 						  });    
@@ -218,7 +216,6 @@ width:100%;
 		}
 	}
 
-
 	function sendtobackground() {
 		if(chd){
 		let up=$("#ifm").clone();
@@ -228,7 +225,7 @@ width:100%;
 		if(up.lengh>up_max){
 			showinfo(up_len_err.get(lang));
 		}
-		$("#shrinfo").hide();
+		$("#shr").html(shr_url_err.get(lang));
 		up= JSON.stringify(up);
 		$.ajax({
 			url : 'http://127.0.0.1:8000/user/cu', 
@@ -252,7 +249,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 			switch(xhr){
 			case 1:
 				showinfo(success.get(lang));
-				$("#shrinfo").show();
+				$("#shr").html(shr_base+src);
 				chd=false;
 				break;
 			case 5:
@@ -286,6 +283,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 				$("#shr").html(shr_base+src);
 			} else{
 				ifm.innerHTML=root.get(lang);
+				$("#shr").html(shr_url_err.get(lang));
 			}
 		}
 	}	
@@ -338,12 +336,12 @@ FORMAT_ERR='7' # 上传文件格式错误
 	function shrtgl(){
 		$("#shrinfo").toggle();
 		if(shron){
-			$("span.shron").show();
-			$("span.shroff").hide();
-			shron=false;
-		}else{
 			$("span.shroff").show();
 			$("span.shron").hide();
+			shron=false;
+		}else{
+			$("span.shron").show();
+			$("span.shroff").hide();
 			shron=true;
 		}
 	}
@@ -353,7 +351,6 @@ FORMAT_ERR='7' # 上传文件格式错误
 			location.href='index.html';
 			return;
 			}
-		$("#shrinfo").hide();
 		$("#mod input").each(function(i,e){$(e).focus(function(){$("#errmsg").text=""})})
 		mod = document.getElementById("mod");
 		
@@ -366,11 +363,16 @@ FORMAT_ERR='7' # 上传文件格式错误
 		get_default_lang();
 		document.getElementById(lang).click();
 		
+		// 导入自己的书签
 		xmlhttp.onreadystatechange=ck_st;
 		src=location.search.substring(1);
 		xmlhttp.open("GET",'/c/'+ src,true);
 		xmlhttp.send();
-
+		
+		// 显示
+		$("#shrinfo").hide();
+		$("span.shroff").show();
+		$("span.shron").hide();
 	}
 	
 	// 菜单处理
@@ -592,6 +594,9 @@ FORMAT_ERR='7' # 上传文件格式错误
 				})
 		}	
 	}
+	function hlp(){
+		window.open("/help.html", '_blank').location;	
+	}
 </script>
 </head>
 
@@ -604,10 +609,11 @@ FORMAT_ERR='7' # 上传文件格式错误
 	</div>
 	<div id="ctr">
 	<button onclick="sendtobackground();"><span class='zh'>同步至服务器</span><span class='en'>Sync to Server</span></button>
-	<button onclick="logout();"><span class='zh'>退出</span><span class='en'>Log Out</span></button>
-	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Remove Account</span></button>
 	<button onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>Upload File</span></button>
-	<button onclick="UploadFile();"><span class='zh'>帮助</span><span class='en'>Help</span></button>
+	<button onclick="logout();"><span class='zh'>退出</span><span class='en'>Log Out</span></button>
+	<button onclick="hlp();"><span class='zh'>帮助</span><span class='en'>Help</span></button>
+	<button onclick="shrtgl();"><span class='zh'><span class='shroff'>显示</span><span class='shron'>隐藏</span>分享链接</span><span class='en'><span class='shroff'>Display</span><span class='shron'>Hide</span> share URL</span></button>
+	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Remove Account</span></button>
 	</div>
 </div>
 	
@@ -617,7 +623,8 @@ FORMAT_ERR='7' # 上传文件格式错误
 <button ></button>
 </div>
 <div id='shrinfo'>
-	<label><span class="zh">用于分享的网址:</span><span class="en">URL for share:</span></label><p id="shr"></p>
+	<label><span class="zh">用于分享的网址:</span><span class="en">URL for share:</span></label>
+	<p id="shr"></p>
 	<p><span class="zh">此链接与用户名绑定，不会因内容变化而变化</span><span class="en">This URL is associated with your username, won't change with modification of contents.</span>
 	<a href=""><span class="zh">转换为二维码</span><span class="en">make QR code</span></a>
 </div>
@@ -628,7 +635,6 @@ FORMAT_ERR='7' # 上传文件格式错误
 		<p id="errmsgf"></p>
 		<button onclick="cnlupf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
 		<button onclick="hupf()"><span class='zh'>上传</span><span class='en'>upload</span></button>
-		<button onclick="shrtgl()"><span class='zh'><span class='shroff'>显示</span><span class='shron'>隐藏</span>分享链接</span><span class='en'><span class='shroff'>Display</span><span class='shron'>Hide</span> share URL</span></button>
 		</form>
 	</div>
 	<div id='mod'>

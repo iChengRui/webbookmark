@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <title>webbookmark-help</title>
 <style>
+h4{list-style-type: square;}
+h5{list-style-type: circle;}
+h5,h4{margin:1ex;display: list-item;}
+p{margin: 0;}
 div.zh,div.en{display:none;flex-direction:column;}
 .imp{color:red;}
 </style>
@@ -101,13 +105,13 @@ div.zh,div.en{display:none;flex-direction:column;}
 <p>Display or hide it's sub-folder and bookmark</p> 
 <h4>Interpretation</h4>
 <h5>Sync to Server</h5>
-<p>Sync the modified bookmark to the server, so that the updated content will be saved. if the bookmark is not synced after change, the new content will be lost.</p>
+<p>Sync the modified bookmark to the server, so that the updated content will be saved. If the bookmark is not synced after change, the new content will be lost.</p>
 <h5>Log Out</h5>
 <p>Remove "login" state, you need to log in again if you want to edit later. If you need to forbid others to edit your bookmark with this browser, it helps.</p>
 <h5>Remove account</h5>
 <p>Remove all your information from this website, non-recoverable. If the bookmark matters, save it to local file.Step as follows:</p>
 <ol>
-<li>After Login,the web browser will show URL in location bar. For example,http://127.0.0.1:8000/<span class="imp">owner.html?</span>2709821b9389377c472f64e7981ffa4894a78b4dd0185999543857c11fdce3b8</li>
+<li>After Login,the web browser will show URL in location bar. For example,  http://127.0.0.1:8000/<span class="imp">owner.html?</span>2709821b9389377c472f64e7981ffa4894a78b4dd0185999543857c11fdce3b8</li>
 <li>Replace &quot;<span class="imp">owner.html?</span>&quot; with &quot;<span class="imp">c/</span>&quot;，above URL will be http://127.0.0.1:8000/<span class="imp">c/</span>2709821b9389377c472f64e7981ffa4894a78b4dd0185999543857c11fdce3b8</li>
 <li>Press Enter</li>
 <li>Now, your bookmark is shown</li>

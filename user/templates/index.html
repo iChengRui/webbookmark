@@ -5,13 +5,13 @@
 <title>webbookmark</title>
 <style type="text/css">
 html,body{height: 100%;display: flex;justify-content: space-around;flex-direction: column;}
+li{margin: 1ex 0;}
 #slg_log{
 display:flex;
 flex-direction:row;
 flex-wrap:wrap;
 justify-content: space-around;
 align-items:start;
-
 }
 #log {
 	width:max-content;
@@ -57,8 +57,8 @@ label{font-size:large;}
 	const rpt_err=new Map([['zh','此用户名已存在，请更换用户名'],['en','this username already exists.Please change another name.']]);
 	const consistency_err=new Map([['zh',' 两次输入的密码不一致，请重新输入'],['en',' two passwords entered are inconsistent,please enter again.']]);
 	
-	var regs=new RegExp("[^A-Za-z_0-9]");
-	var regp=new RegExp("(?=.*[A-Za-z])(?=.*\d)");
+	var regs=/[^A-Za-z_0-9]/;
+	var regp=/^(?=.*[A-Za-z])(?=.*\d).+/;
 	
 	function get_default_lang(){
 		let la=navigator.language||navigator.userLanguage;
@@ -92,7 +92,7 @@ function ck_lang() {
 
 	
 window.onload=function(){	
-	var lgc=document.getElementById("lg");	
+	var lgc=document.getElementById("lg");
 		
 	// 选择语言
 	lgc.onclick= ck_lang;

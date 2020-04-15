@@ -46,7 +46,7 @@ pwdptn=re.compile(pwdpattern)
 
 gc_verify_container_tag={'li','ul','h5'}
 gc_escape_char=re.compile("<|\"|>|'")
-gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$")
+gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=#]+$")
 gc_img=re.compile(r"<img.+?>",re.DOTALL)
 gc_a_target=re.compile(r"target\s*?=.+?_blank\s*?\"|'",re.DOTALL|re.A|re.I)
 
@@ -161,7 +161,7 @@ def  uname_m_fname(uname):
     return s.hexdigest()
 
 def escape_char(cnt):
-    return cnt.stranslate(m)
+    return cnt.translate(m)
     
 
 def verify_html(str_l):
@@ -214,7 +214,8 @@ def verify_html(str_l):
                     if len(attr)!=1 or \
                         not attr.has_key("href") or \
                         gc_escape_char.search(child_href.text) or \
-                        not gc_url.match(attr["href"]):
+                        not URL_CHECK(attr["href"]):
+                        # not gc_url.match(attr["href"]):
                         raise ValueError
                 else:    
                     raise ValueError
@@ -243,9 +244,8 @@ def verify_bookmark(cnt):
     """
     将浏览器导出的书签（html格式）转换为所需的格式
     """
-    html_content=html_content.split('\n')
+    html_content=cnt.split('\n')
 
-    
     html_frag=list()
     
     startheader="<ul><h5>"
@@ -262,6 +262,7 @@ def verify_bookmark(cnt):
     while(j<html_content_len):
         i=html_content[j].strip('  \n')
         if len(i)<3:
+            j+=1
             continue
         if i[:4]=="<DT>":
             #书签或文件夹名
@@ -269,13 +270,22 @@ def verify_bookmark(cnt):
                 #书签链接
                 href_p=i.find('"',15)
                 if href_p==-1:
+                    print(i)
                     raise ValueError
                 href=i[13:href_p]
-                if not gc_url.match(href):
+                # if href[-1]=='/':
+                #     href=href[:-1]
+                # if not gc_url.match(href):
+                # if not URL_CHECK(href):
+                try:
+                    URL_CHECK(href)
+                except Exception:
+                    print(i)
                     raise ValueError
                 #书签名称
                 bkmk_name=i.find(">",href_p)
                 if bkmk_name==-1:
+                    print(i)
                     raise ValueError
                 bkmk_name=i[bkmk_name+1:-4]
                 bkmk_name=escape_char(bkmk_name)
@@ -285,6 +295,7 @@ def verify_bookmark(cnt):
                 html_frag.append(startheader) 
                 h5=i.rfind("</H3>")
                 if h5==-1:
+                    print(i)
                     raise ValueError
                 h5=i[8:h5]
                 h5=escape_char(h5)
@@ -293,9 +304,11 @@ def verify_bookmark(cnt):
                 j+=1
                 i=html_content[j].strip('  \n')
                 if i!="<DL><p>":
+                    print(i)
                     raise ValueError
                 header_level+=1
             else:
+                print(i)
                 raise ValueError
         elif i[:5]=="</DL>":
             header_level-=1
@@ -305,19 +318,28 @@ def verify_bookmark(cnt):
             h5=i.rfind("</H1>")
             header_level+=1
             if h5==-1:
+                print(i)
                 raise ValueError
             h5=i[4:h5]
             h5=escape_char(h5)
             html_frag.append(h5) 
             html_frag.append(endheader) 
-            j+=1
-            i=html_content[j].strip('  \n')
-            if i!="<DL><p>":
-                raise ValueError
+            while True:
+                j+=1
+                i=html_content[j].strip('  \n')
+                if not i:
+                    continue
+                elif i!="<DL><p>":
+                    print(i)
+                    raise ValueError
+                else:
+                    break
         else:
             pass    
         j+=1
     if header_level<1:
+        print("header_level")
+        print(''.join(html_frag))
         raise ValueError
     else:
         html_frag.append(endheader_tail*header_level)
