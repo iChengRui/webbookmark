@@ -46,7 +46,7 @@ pwdptn=re.compile(pwdpattern)
 
 gc_verify_container_tag={'li','ul','h5'}
 gc_escape_char=re.compile("<|\"|>|'")
-gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=#]+$")
+# gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=#]+$")
 gc_img=re.compile(r"<img.+?>",re.DOTALL)
 gc_a_target=re.compile(r"target\s*?=.+?_blank\s*?\"|'",re.DOTALL|re.A|re.I)
 
@@ -254,7 +254,7 @@ def verify_bookmark(cnt):
     
     starthref='<li><a href="'
     endhref='">'
-    endhref_tail='</a>'
+    endhref_tail='</a></li>'
     html_content_len=len(html_content)
     
     header_level=0
@@ -270,7 +270,6 @@ def verify_bookmark(cnt):
                 #书签链接
                 href_p=i.find('"',15)
                 if href_p==-1:
-                    print(i)
                     raise ValueError
                 href=i[13:href_p]
                 # if href[-1]=='/':
@@ -280,35 +279,31 @@ def verify_bookmark(cnt):
                 try:
                     URL_CHECK(href)
                 except Exception:
-                    print(i)
                     raise ValueError
                 #书签名称
                 bkmk_name=i.find(">",href_p)
                 if bkmk_name==-1:
-                    print(i)
                     raise ValueError
                 bkmk_name=i[bkmk_name+1:-4]
                 bkmk_name=escape_char(bkmk_name)
                 html_frag.extend((starthref,href,endhref,bkmk_name,endhref_tail))
             elif i[4:7]=="<H3":
             #文件夹名称
-                html_frag.append(startheader) 
+                html_frag.append(startheader)
+                h5_start=i.find(">",7) 
                 h5=i.rfind("</H3>")
-                if h5==-1:
-                    print(i)
+                if h5==-1 or h5_start==-1 or h5_start>h5:
                     raise ValueError
-                h5=i[8:h5]
+                h5=i[h5_start+1:h5]
                 h5=escape_char(h5)
                 html_frag.append(h5) 
                 html_frag.append(endheader) 
                 j+=1
                 i=html_content[j].strip('  \n')
                 if i!="<DL><p>":
-                    print(i)
                     raise ValueError
                 header_level+=1
             else:
-                print(i)
                 raise ValueError
         elif i[:5]=="</DL>":
             header_level-=1
@@ -318,7 +313,6 @@ def verify_bookmark(cnt):
             h5=i.rfind("</H1>")
             header_level+=1
             if h5==-1:
-                print(i)
                 raise ValueError
             h5=i[4:h5]
             h5=escape_char(h5)
@@ -330,16 +324,15 @@ def verify_bookmark(cnt):
                 if not i:
                     continue
                 elif i!="<DL><p>":
-                    print(i)
                     raise ValueError
                 else:
                     break
         else:
             pass    
         j+=1
-    if header_level<1:
-        print("header_level")
-        print(''.join(html_frag))
+    if header_level<0:
+        # print("header_level:"+str(header_level))
+        # print(''.join(html_frag))
         raise ValueError
     else:
         html_frag.append(endheader_tail*header_level)

@@ -159,6 +159,7 @@ li,ul{list-style:none;}
 		let formData=new FormData($("#fm")[0]);
 		setTimeout(cnlupf,3*1000);
 		$("#shr").html(shr_url_err.get(lang));
+		chd=false;
 		  $.ajax({
 			url: '/user/fu',
 			type: 'post',
@@ -179,7 +180,6 @@ li,ul{list-style:none;}
 					showinfo(fmt_err.get(lang));
 					break;
 				default:
-					src=res;
 					$.ajax({
 						url : 'http://127.0.0.1:8000/c/'+res, 
 						type : 'get',
@@ -187,12 +187,14 @@ li,ul{list-style:none;}
 						processData : false,
 						contentType : false,
 						async : true,
-					}).done(function(xhr, status, error) {
-						ifm.innerHTML=	xhr.responseText;
-						$("#shr").html(shr_base+src);
-						}).fail(function(res){
-							showinfo(svr_err.get(lang));
-						  });    
+						success:function(xhr, status, error) {
+							ifm.innerHTML=	xhr;
+							addimg("#ifm li");
+							rm_a("#ifm li");
+							$("#shr").html(shr_base+src);
+						},
+						error:function(res){ showinfo(svr_err.get(lang));}
+					});    
 				break;}
 		  }).fail(function (res) {
 			showinfo(svr_err.get(lang));
@@ -324,7 +326,6 @@ FORMAT_ERR='7' # 上传文件格式错误
 			e2.style.background='white';
 		}
 	
-	
 	function ck(e){
 		if(chd)
 			{
@@ -419,6 +420,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 		e.src="global.svg";
 		e.onerror=null;
 	}
+	
 	function get_base(src){
 		let i=src.indexOf("//");
 		if(i==-1){
@@ -443,6 +445,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 				 "onerror=\"imgerr(this);\"/>");
 		})
 	}
+	
 	// 显示新增
 	function dadd(e) {
 		hidemenu();
@@ -545,6 +548,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 	function del(event) {
 		hidemenu();
 		$(modi).remove();
+		chd=true;
 	}
 	// 登出
 	function logout(){
