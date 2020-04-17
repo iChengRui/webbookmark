@@ -14,7 +14,7 @@ from django.contrib.auth import logout, authenticate, login
 from django.conf import settings
 from django.core.validators import URLValidator
 from django.contrib.auth.decorators import login_required
-from django.db import IntegrityError, DataError
+from django.db import IntegrityError, DataError, transaction
 
 from . import models 
 from .models import MyUser,IPRecord
@@ -78,14 +78,19 @@ def ulogin(req):
             if rec:
                 if rec.failure_times==4:
                     date_aval=round(t())+ONEDAY
-                    rec.failure_times+=1
-                    rec.date_available=date_aval
+                    with transaction.atomic(None, False):
+                        rec.failure_times+=1
+                        rec.date_available=date_aval
+                        rec.save()
                 else:
-                    rec.failure_times+=1
+                    with transaction.atomic(None, False):
+                        rec.failure_times+=1
+                        rec.save()
             else:
                 date_aval=round(t())+ONEDAY
-                rec=IPRecord.objects.create(ip=ip,failure_times=1,date_available=date_aval)
-            rec.save()
+                with transaction.atomic(None, False):
+                    rec=IPRecord.objects.create(ip=ip,failure_times=1,date_available=date_aval)
+                    rec.save()
             return HttpResponse(U_P_ERR,content_type='application/json')
         else:
             login(req, user)
@@ -117,15 +122,15 @@ def uregister(req):
         
         if pwd == pwd2 and pwdptn.match(pwd):
             try:
-                obj = u.create_user(username=username, password=pwd)
+                with transaction.atomic(None, False):
+                    obj = u.create_user(username=username, password=pwd)
+                    obj.save()
             except IntegrityError as err:
                 msg =U_RPT_ERR
             except Exception as err:
                 msg =SVR_ERR
             if msg:
                 return HttpResponse(msg,content_type='application/json')
-            
-            obj.save()
 
             login(req, obj)
             
