@@ -27,6 +27,7 @@ CONTENT_MAX_LEN=65536
 SALT=settings.SECRET_KEY[::2]
 MEDIA_ROOT=settings.MEDIA_ROOT
 ONEDAY=86400  # 24*60*60 一天的秒数
+CHK_LEN=6  # 用于验证文件名是否为访问者所有的长度，部分检验，可调整
 
 
 U_P_ERR='0' # 用户名或密码错误
@@ -94,10 +95,10 @@ def ulogin(req):
             return HttpResponse(U_P_ERR,content_type='application/json')
         else:
             login(req, user)
-            
-            rsp=HttpResponse('"'+uname_m_fname(username)+'"',content_type='application/json')
+            fname=uname_m_fname(username)
+            rsp=HttpResponse('"'+fname+'"',content_type='application/json')
             # secure 是否仅通过https传输
-            rsp.set_cookie('login',1,secure=False)
+            rsp.set_cookie('login',fname[:CHK_LEN],secure=False)
             
             return rsp
 

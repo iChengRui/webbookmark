@@ -348,7 +348,11 @@ FORMAT_ERR='7' # 上传文件格式错误
 	}
 	window.addEventListener("beforeunload",ck); 
 	window.onload=function (){
-		if(ck_v('login')!=1) {
+		src=location.search.substring(1);
+		let src_len=src.length;
+		let v=ck_v('login');
+		let v_len=v.length;
+		if(!src_len || !v_len || src.substr(0,v_len)!=v) {
 			location.href='index.html';
 			return;
 			}
@@ -366,7 +370,6 @@ FORMAT_ERR='7' # 上传文件格式错误
 		
 		// 导入自己的书签
 		xmlhttp.onreadystatechange=ck_st;
-		src=location.search.substring(1);
 		xmlhttp.open("GET",'/c/'+ src,true);
 		xmlhttp.send();
 		
