@@ -124,7 +124,8 @@ li,ul{list-style:none;}
 	menue, // 菜单是否存在
 	menuh, // 菜单的事件handle
 	shron=false, // 分享URL是否已显示
-	rm_notified=false;
+	rm_notified=false,
+	used_id=[];
 	xmlhttp=new XMLHttpRequest();
 	
 	const shr_base="http:127.0.0.1/vistor?";
@@ -604,6 +605,47 @@ FORMAT_ERR='7' # 上传文件格式错误
 	function hlp(){
 		window.open("/help.html", '_blank').location;	
 	}
+	function get_used_id(){
+		let all_id=[];
+		let ul_e=document.getElementsByTagName("ul");
+		let li_e=document.getElementsByTagName("li");
+		
+		for(let e in ul_e){
+			all_id.push(e.id);			
+		}
+		for(let e in li_e){
+			all_id.push(e.id);			
+		}
+		all_id.sort();
+		return all_id; 
+	}
+	
+	function get_avaliable_id(){
+		let u_id_l=used_id.length;
+		if(u_id_l>1){
+			u_id_l=u_id_l-1;
+			let i=0;
+			while(i<u_id_l){
+				if(used_id[i+1]-used_id[i]==1){
+					i=i+1;
+				}else{
+					return used_id[i]+1;
+				}
+			}
+		}else if(u_id_l){
+			return used_id[0]+1;
+		}else{
+			return 1;
+		}
+		return used_id[u_id_l-1]+1;
+	}
+	function remove_used_id(rm_id){
+		let idx=0;
+		for(let i in rm_id){
+			idx=used_id.indexOf(i,idx);
+			if(idx!=-1){usd_id.splice(idx,1);}
+		}
+	} 
 </script>
 </head>
 
