@@ -401,7 +401,66 @@ def cupdate(req):
         fname=uname_m_fname(req.user.username) 
         return HttpResponseRedirect('/owner.html?'+fname)
 
+def find_str(array,s):
+    idx=0
+    for j in array:
+        idx_s=j.find(s)
+        if idx_s!=-1:
+            return (idx,idx_s)
+    return(-1,-1)
 
+@login_required
+def piece_cupdate(req):
+    try:
+        c=loads(req.body)
+    except Exception:
+        return HttpResponse(FORMAT_ERR, content_type='application/json')
+        
+    if not isinstance(c,list):
+        return HttpResponse(FORMAT_ERR, content_type='application/json')
+    
+    err_itm=list()
+    old_c=list()
+    fname=uname_m_fname(username) 
+    with gzip.open(MEDIA_ROOT+fname+".gz", 'rt', 6, encoding='utf8' ) as f:
+        old_c.append(f.read())
+    
+    for i in c:
+        if not isinstance(i,list):
+           continue
+        kind=i[1]
+        if kind==1:
+            #1.新增链接
+            #找到父节点
+            if gc_escape_char.search(i[2]) or len(i)<5:
+                err_itm.append(i[0]) 
+            try:
+                URL_CHECK(i[4])
+            except Exception:
+                err_itm.append(i[0]) 
+                continue
+            
+            s="id=\""+str(i[0])+'"'
+            new_itm="<li id=\""+str(i[0])+'"'+"><a href=\""+i[4]+'">'+i[2]+"</a></li>"
+            idx,idx_s=find_str(old_c,s)
+            if idx==-1:
+                err_itm.append(i[0]) 
+                continue
+            # 找到结尾
+            idx_e=old_c[idx].find("</ul>",idx)
+            tail=idx_s
+            while old_c[idx][tail]!='>':
+                tail+=1
+            tail+=1
+            old_c[idx:idx]=[old_c[idx][:tail],old_c[idx][tail:idx_e],new_itm,"</ul>"]
+            #TODO 删除原子字符
+            
+            
+        elif kind==2:
+        elif kind==3:
+        elif kind==4:
+        elif kind==5:
+        elif kind==6:
 # TODO 
 @login_required
 def uupdate(req):
