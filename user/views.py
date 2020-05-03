@@ -22,6 +22,7 @@ from django.http.response import HttpResponse,HttpResponseRedirect
 from django.contrib.messages.constants import SUCCESS
 from django.conf.global_settings import MEDIA_ROOT
 from pip._vendor.requests.api import head
+from _ast import Or
 
 URL_CHECK = URLValidator()
 CONTENT_MAX_LEN=65536
@@ -409,19 +410,22 @@ def cupdate(req):
 def find_str(array:list,s:str,start=0,start_s=0):
     """
     从list array中找到s，返回位置，和s所在的位置
-    start为起始位置
+    start为 list开始搜寻的起始位置
+    start_s 为item开始搜寻的起始位置
     """
     idx=0
     first=True
-    for j in array[start:]:
-        if first:
-            idx_s=j.find(s,start_s)
-        else:
-            idx_s=j.find(s)
+    
+    idx_s=array[start].find(s,start_s)
+    if idx_s!=-1:
+        return (idx+start,idx_s)
+    
+    idx+=1
+    for j in array[start+1:]:
+        idx_s=j.find(s)
         if idx_s!=-1:
             return (idx+start,idx_s)
         idx+=1
-        first=False
     return(-1,-1)
 
 @login_required
@@ -436,27 +440,35 @@ def piece_cupdate(req):
     
     err_itm=list()
     old_c=list()
-    fname=uname_m_fname(username) 
-    with gzip.open(MEDIA_ROOT+fname+".gz", 'rt', 6, encoding='utf8') as f:
+    f_count=-1
+    fname=MEDIA_ROOT+uname_m_fname(username) +".gz"
+    
+    with gzip.open(fname, 'rt', 6, encoding='utf8') as f:
         old_c.append(f.read())
 
     for i in c:
-        if not isinstance(i,list):
+        f_count+=1
+        if not (isinstance(i,list) 
+                and isinstance(i[0], int) and i[0]>0
+                and isinstance(i[1], int) and 7>i[1]>0):
+           err_itm.append(str(f_count))
            continue
+       
         kind=i[1]
         if kind==1 or kind==4:
-            #1.新增链接
-            #找到父节点
-            if gc_escape_char.search(i[2]) or len(i)<5:
+            #1.新增链接 4.新增文件夹
+            if gc_escape_char.search(i[2]) or len(i)<5 \
+                or not isinstance(i[4], int) or i[4]<=0:
                 err_itm.append(i[0]) 
                 continue
+            
             if kind==1:
                 try:
                     URL_CHECK(i[3])
                 except Exception:
                     err_itm.append(i[0]) 
                     continue
-                new_itm="<li id=\""+str(i[0])+'"'+"><a href=\""+i[4]+'">'+i[2]+"</a></li>"
+                new_itm="<li id=\""+str(i[0])+'"'+"><a href=\""+i[3]+'">'+i[2]+"</a></li>"
             else:
                 new_itm="<ul id=\""+str(i[0])+'"'+"><h5>"+i[2]+"</h5></ul>"
                 
@@ -479,6 +491,7 @@ def piece_cupdate(req):
                 del old_c[idx]       
                 old_c[idx:idx]=itm0,new_itm,itm1
             else:
+                idx+=1
                 old_c[idx:idx]=new_itm
             
         elif kind==2:
@@ -495,6 +508,7 @@ def piece_cupdate(req):
             idx_e=itm.find("</li>")
             itm0,itm1=itm[:idx_e+6],itm[idx_e+6:]
             idx_href=0
+            # 修改链接名称
             if i[3]:
                 try:
                     URL_CHECK(i[3])
@@ -589,7 +603,7 @@ def piece_cupdate(req):
             itm0,itm1=old_c[tail][:tail_s+4],old_c[tail][tail_s+4:]
             old_c[tail:tail]=itm0,itm1
             del old_c[header:tail+1]
-    with gzip.open(MEDIA_ROOT+fname+".gz", 'wt', 6, encoding='utf8') as f:
+    with gzip.open(fname, 'wt', 6, encoding='utf8') as f:
            f.write("".join(old_c)) 
     return HttpResponse(dumps(err_itm), content_type='application/json')
 # TODO 
