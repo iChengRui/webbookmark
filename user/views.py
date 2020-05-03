@@ -21,6 +21,7 @@ from .models import MyUser,IPRecord
 from django.http.response import HttpResponse,HttpResponseRedirect
 from django.contrib.messages.constants import SUCCESS
 from django.conf.global_settings import MEDIA_ROOT
+from pip._vendor.requests.api import head
 
 URL_CHECK = URLValidator()
 CONTENT_MAX_LEN=65536
@@ -43,6 +44,10 @@ FORMAT_ERR='7' # 上传文件格式错误
 # 至少一个字母，一个数字，一个特殊字符
 pwdpattern = r'^(?=.*?[A-Za-z])(?=.*?[0-9])(?=.*?[^A-Za-z0-9]).{5,12}$'
 pwdptn=re.compile(pwdpattern)
+
+#directory start tail pattern
+dpattren='</ul|<ul'
+dptn=re.compile(dpattren)
 
 
 gc_verify_container_tag={'li','ul','h5'}
@@ -401,16 +406,22 @@ def cupdate(req):
         fname=uname_m_fname(req.user.username) 
         return HttpResponseRedirect('/owner.html?'+fname)
 
-def find_str(array:list,s:str,start=0):
+def find_str(array:list,s:str,start=0,start_s=0):
     """
     从list array中找到s，返回位置，和s所在的位置
     start为起始位置
     """
     idx=0
+    first=True
     for j in array[start:]:
-        idx_s=j.find(s)
+        if first:
+            idx_s=j.find(s,start_s)
+        else:
+            idx_s=j.find(s)
         if idx_s!=-1:
             return (idx+start,idx_s)
+        idx+=1
+        first=False
     return(-1,-1)
 
 @login_required
@@ -426,48 +437,49 @@ def piece_cupdate(req):
     err_itm=list()
     old_c=list()
     fname=uname_m_fname(username) 
-    with gzip.open(MEDIA_ROOT+fname+".gz", 'rt', 6, encoding='utf8' ) as f:
+    with gzip.open(MEDIA_ROOT+fname+".gz", 'rt', 6, encoding='utf8') as f:
         old_c.append(f.read())
 
     for i in c:
         if not isinstance(i,list):
            continue
         kind=i[1]
-        if kind==1:
+        if kind==1 or kind==4:
             #1.新增链接
             #找到父节点
             if gc_escape_char.search(i[2]) or len(i)<5:
                 err_itm.append(i[0]) 
-            try:
-                URL_CHECK(i[4])
-            except Exception:
-                err_itm.append(i[0]) 
                 continue
+            if kind==1:
+                try:
+                    URL_CHECK(i[3])
+                except Exception:
+                    err_itm.append(i[0]) 
+                    continue
+                new_itm="<li id=\""+str(i[0])+'"'+"><a href=\""+i[4]+'">'+i[2]+"</a></li>"
+            else:
+                new_itm="<ul id=\""+str(i[0])+'"'+"><h5>"+i[2]+"</h5></ul>"
+                
             
             s="id=\""+str(i[4])+'"'
-            new_itm="<li id=\""+str(i[0])+'"'+"><a href=\""+i[4]+'">'+i[2]+"</a></li>"
             idx,idx_s=find_str(old_c,s)
             
             if idx==-1:
                 err_itm.append(i[0]) 
                 continue
-            # 找到结尾
-            idx_e=find_str(old_c,"</ul>",idx)
-            #TODO 处理格式错误的文件
-            if idx_e[0]==-1:
-                pass
+            # 找到结尾 </h5>
+            idx,idx_s=find_str(old_c,"</h5>",idx,idx_s)
+            # TODO内部格式错误
+            if idx==-1:
+                err_itm.append(i[0]) 
+                continue
             
-            tail=idx_s
-            while old_c[idx][tail]!='>':
-                tail+=1
-            tail+=1
-            if idx_e[0]==idx:
-                old_c[idx:idx]=[old_c[idx][:tail],old_c[idx][tail:idx_e[1]],new_itm,"</ul>"]
-                #TODO 删除原子字符
-                del old_c[idx+4]
+            if old_c[idx][-5:]!="</h5>":
+                itm0,itm1=old_c[idx][:idx_s+6],old_c[idx][idx_s+6:]
+                del old_c[idx]       
+                old_c[idx:idx]=itm0,new_itm,itm1
             else:
-                old_c[idx_e[0]:idx_e[0]]=new_itm
-            
+                old_c[idx:idx]=new_itm
             
         elif kind==2:
             # 2.修改链接
@@ -477,27 +489,109 @@ def piece_cupdate(req):
             if idx==-1:
                 err_itm.append(i[0]) 
                 continue
+            
+            pieces=list()
             itm=old_c[idx]
             idx_e=itm.find("</li>")
             itm0,itm1=itm[:idx_e+6],itm[idx_e+6:]
+            idx_href=0
+            if i[3]:
+                try:
+                    URL_CHECK(i[3])
+                except Exception:
+                    err_itm.append(i[0]) 
+                    continue
+                idx_href=itm0.find("href=\"",idx)
+                pieces.extend([item0[:idx_href],i[3],"\">"])
+            else:
+                pieces.append(item0)   
+            # 修改文件名
             if i[2]:
-                
-            # 找到结尾
+                if gc_escape_char.search(i[2]) or len(i)<5:
+                    err_itm.append(i[0]) 
+                    continue
+                if idx_href:
+                    pieces.extend([i[2],'</a></li>'])
+                else:
+                    idx_label=itm0[:-6].rfind('>',idx)
+                    pieces.extend([itm0[:idx_label+1],i[2],'</a></li>'])
             
-            idx_e=find_str(old_c,"</li>",idx)
-            #TODO 处理格式错误的文件
-            if idx_e[0]==-1:
-                pass
-            
-            tail=idx_s
-            while old_c[idx][tail]!='>':
-                tail+=1
-            tail+=1
-            
+            pieces.append(itm1)
+            del old_c[idx]
+            old_c[idx:idx]=pieces
         elif kind==3:
-        elif kind==4:
+            # 3.删除链接
+            s="id=\""+str(i[4])+'"'
+            idx,idx_s=find_str(old_c,s)
+            
+            if idx==-1:
+                err_itm.append(i[0]) 
+                continue
+            itm=old_c[idx]
+            itm0=itm.rfind('<li',0,idx_s)
+            itm1=itm.find('</li>',idx_s)
+            itm0,itm1=itm[:itm0],itm[itm1+5:]
+            del old_c[idx]
+            old_c[idx:idx]=(itm0,itm1)
         elif kind==5:
+            if gc_escape_char.search(i[2]) or len(i)<5:
+                err_itm.append(i[0]) 
+                continue
+            
+            s="id=\""+str(i[4])+'"'
+            idx,idx_s=find_str(old_c,s)
+            
+            if idx==-1:
+                err_itm.append(i[0]) 
+                continue
+            # 找到开头 </h5>
+            idx,idx_s=find_str(old_c,"<h5>",idx,idx_s)
+            # TODO内部格式错误
+            if idx==-1:
+                err_itm.append(i[0]) 
+                continue
+            itm=old_c[idx]
+            idx_tail=itm.find("</h5>",idx_s)
+            itm0,itm1=itm[:idx_s],itm[idx_tail+5:]
+            new_itm="<h5>"+i[2]+"</h5>"
+            del old_c[idx]
+            old_c[idx:idx]=itm0,new_itm,itm1
+            
         elif kind==6:
+            s="id=\""+str(i[0])+'"'
+            header,header_s=find_str(old_c,s)
+            #<ul id=
+            header_s=old_c[header].find("<ul" ,max(header_s-5,0),header_s)
+            deepth=0
+            # TODO内部格式错误
+            if header_s==-1:
+                err_itm.append(i[0]) 
+                continue
+            itm0,itm1=old_c[header][:header_s],old_c[header][header_s:]
+            old_c[header:header]=itm0,itm1
+            header+=1
+            tail=0
+            tail_s=0
+            finished=False
+            for i in old_c[header:]:
+                for j in dptn.finditer(i):
+                    if j.group(0)=='<ul':
+                        deepth+=1
+                    else:
+                        deepth-=1
+                    if deepth==0:
+                        finished=True
+                        tail_s=j.start()
+                        break
+                if finished:
+                    break
+                tail+=1
+            itm0,itm1=old_c[tail][:tail_s+4],old_c[tail][tail_s+4:]
+            old_c[tail:tail]=itm0,itm1
+            del old_c[header:tail+1]
+    with gzip.open(MEDIA_ROOT+fname+".gz", 'wt', 6, encoding='utf8') as f:
+           f.write("".join(old_c)) 
+    return HttpResponse(dumps(err_itm), content_type='application/json')
 # TODO 
 @login_required
 def uupdate(req):
