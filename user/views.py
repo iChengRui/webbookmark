@@ -401,12 +401,16 @@ def cupdate(req):
         fname=uname_m_fname(req.user.username) 
         return HttpResponseRedirect('/owner.html?'+fname)
 
-def find_str(array,s):
+def find_str(array:list,s:str,start=0):
+    """
+    从list array中找到s，返回位置，和s所在的位置
+    start为起始位置
+    """
     idx=0
-    for j in array:
+    for j in array[start:]:
         idx_s=j.find(s)
         if idx_s!=-1:
-            return (idx,idx_s)
+            return (idx+start,idx_s)
     return(-1,-1)
 
 @login_required
@@ -424,7 +428,7 @@ def piece_cupdate(req):
     fname=uname_m_fname(username) 
     with gzip.open(MEDIA_ROOT+fname+".gz", 'rt', 6, encoding='utf8' ) as f:
         old_c.append(f.read())
-    
+
     for i in c:
         if not isinstance(i,list):
            continue
@@ -440,23 +444,56 @@ def piece_cupdate(req):
                 err_itm.append(i[0]) 
                 continue
             
-            s="id=\""+str(i[0])+'"'
+            s="id=\""+str(i[4])+'"'
             new_itm="<li id=\""+str(i[0])+'"'+"><a href=\""+i[4]+'">'+i[2]+"</a></li>"
             idx,idx_s=find_str(old_c,s)
+            
             if idx==-1:
                 err_itm.append(i[0]) 
                 continue
             # 找到结尾
-            idx_e=old_c[idx].find("</ul>",idx)
+            idx_e=find_str(old_c,"</ul>",idx)
+            #TODO 处理格式错误的文件
+            if idx_e[0]==-1:
+                pass
+            
             tail=idx_s
             while old_c[idx][tail]!='>':
                 tail+=1
             tail+=1
-            old_c[idx:idx]=[old_c[idx][:tail],old_c[idx][tail:idx_e],new_itm,"</ul>"]
-            #TODO 删除原子字符
+            if idx_e[0]==idx:
+                old_c[idx:idx]=[old_c[idx][:tail],old_c[idx][tail:idx_e[1]],new_itm,"</ul>"]
+                #TODO 删除原子字符
+                del old_c[idx+4]
+            else:
+                old_c[idx_e[0]:idx_e[0]]=new_itm
             
             
         elif kind==2:
+            # 2.修改链接
+            s="id=\""+str(i[4])+'"'
+            idx,idx_s=find_str(old_c,s)
+            
+            if idx==-1:
+                err_itm.append(i[0]) 
+                continue
+            itm=old_c[idx]
+            idx_e=itm.find("</li>")
+            itm0,itm1=itm[:idx_e+6],itm[idx_e+6:]
+            if i[2]:
+                
+            # 找到结尾
+            
+            idx_e=find_str(old_c,"</li>",idx)
+            #TODO 处理格式错误的文件
+            if idx_e[0]==-1:
+                pass
+            
+            tail=idx_s
+            while old_c[idx][tail]!='>':
+                tail+=1
+            tail+=1
+            
         elif kind==3:
         elif kind==4:
         elif kind==5:
