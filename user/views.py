@@ -15,14 +15,12 @@ from django.conf import settings
 from django.core.validators import URLValidator
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, DataError, transaction
-
-from . import models 
-from .models import MyUser,IPRecord
 from django.http.response import HttpResponse,HttpResponseRedirect
 from django.contrib.messages.constants import SUCCESS
 from django.conf.global_settings import MEDIA_ROOT
-from pip._vendor.requests.api import head
-from _ast import Or
+
+from . import models 
+from .models import MyUser,IPRecord
 
 URL_CHECK = URLValidator()
 CONTENT_MAX_LEN=65536
@@ -506,7 +504,7 @@ def piece_cupdate(req):
             pieces=list()
             itm=old_c[idx]
             idx_e=itm.find("</li>")
-            itm0,itm1=itm[:idx_e+6],itm[idx_e+6:]
+            itm0,itm1=itm[:idx_e+5],itm[idx_e+5:]
             idx_href=0
             # 修改链接名称
             if i[3]:
@@ -516,7 +514,7 @@ def piece_cupdate(req):
                     err_itm.append(i[0]) 
                     continue
                 idx_href=itm0.find("href=\"",idx)
-                pieces.extend([item0[:idx_href],i[3],"\">"])
+                pieces.extend([item0[:idx_href+5],i[3],"\">"])
             else:
                 pieces.append(item0)   
             # 修改文件名
@@ -528,6 +526,10 @@ def piece_cupdate(req):
                     pieces.extend([i[2],'</a></li>'])
                 else:
                     idx_label=itm0[:-6].rfind('>',idx)
+                    # TODO 内部格式错误
+                    if idx_label==-1:
+                        err_itm.append(i[0]) 
+                        continue
                     pieces.extend([itm0[:idx_label+1],i[2],'</a></li>'])
             
             pieces.append(itm1)
@@ -542,12 +544,18 @@ def piece_cupdate(req):
                 err_itm.append(i[0]) 
                 continue
             itm=old_c[idx]
-            itm0=itm.rfind('<li',0,idx_s)
+            itm0=itm.rfind('<li',idx_s-5,idx_s)
             itm1=itm.find('</li>',idx_s)
+            # TODO 内部格式错误
+            if itm0==-1 or itm1==-1:
+                err_itm.append(i[0]) 
+                continue
+            
             itm0,itm1=itm[:itm0],itm[itm1+5:]
             del old_c[idx]
             old_c[idx:idx]=(itm0,itm1)
         elif kind==5:
+            # 5.修改文件夹
             if gc_escape_char.search(i[2]) or len(i)<5:
                 err_itm.append(i[0]) 
                 continue
@@ -555,10 +563,11 @@ def piece_cupdate(req):
             s="id=\""+str(i[4])+'"'
             idx,idx_s=find_str(old_c,s)
             
+            # TODO 内部格式错误
             if idx==-1:
                 err_itm.append(i[0]) 
                 continue
-            # 找到开头 </h5>
+            # 找到开头 <h5>
             idx,idx_s=find_str(old_c,"<h5>",idx,idx_s)
             # TODO内部格式错误
             if idx==-1:
@@ -572,8 +581,13 @@ def piece_cupdate(req):
             old_c[idx:idx]=itm0,new_itm,itm1
             
         elif kind==6:
+            # 6.删除文件夹
             s="id=\""+str(i[0])+'"'
             header,header_s=find_str(old_c,s)
+            if header_s==-1:
+                err_itm.append(i[0]) 
+                continue
+            
             #<ul id=
             header_s=old_c[header].find("<ul" ,max(header_s-5,0),header_s)
             deepth=0
@@ -600,6 +614,7 @@ def piece_cupdate(req):
                 if finished:
                     break
                 tail+=1
+            # FIXIT
             itm0,itm1=old_c[tail][:tail_s+4],old_c[tail][tail_s+4:]
             old_c[tail:tail]=itm0,itm1
             del old_c[header:tail+1]
