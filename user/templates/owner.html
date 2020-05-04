@@ -47,9 +47,11 @@ body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
 }
 h5{margin:0; padding:0;}
 li,ul{list-style:none;}
+button{border-radius: 50%}
 #cntn{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:space-between;}
 #shrinfo {background-color: lightcyan;margin: 0;}
 #ifm{ width:100%;}
+#locknotice{max-width:24em;}
 </style>
 
 <!--  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -125,10 +127,12 @@ li,ul{list-style:none;}
 	menuh, // 菜单的事件handle
 	shron=false, // 分享URL是否已显示
 	rm_notified=false,
+	locked=false, // 是否正在上传
 	used_id=[],
 	chg_rcd=[]; // 记录变化的内容
 	xmlhttp=new XMLHttpRequest();
 	
+	const batch=10;
 	const shr_base="http:127.0.0.1/vistor?";
 	const up_max=65536; //最多字符数 2**16
 	const up_len_err=new Map([['zh','最多允许65536个字符(2^16),请删除不必要的书签或使用简短的名称，如有其他事情，可先保存至本地'],
@@ -221,54 +225,22 @@ li,ul{list-style:none;}
 	}
 
 	function sendtobackground() {
-		if(chd){
-		let up=$("#ifm").clone();
-		$(up).find("img").remove();
-		$(up).find("a").removeAttr("target");
-		up=$(up).html();
-		if(up.lengh>up_max){
-			showinfo(up_len_err.get(lang));
-		}
-		$("#shr").html(shr_url_err.get(lang));
-		up= JSON.stringify(up);
-		$.ajax({
-			url : 'http://127.0.0.1:8000/user/cu', 
-			type : 'post',
-			data :up,
-			cache : false,
-			processData : false,
-			contentType : false,
-			async : true,
-		}).done(function(xhr, status, error) {
-/*
-U_P_ERR='0' # 用户名或密码错误
-SUCCESS='1' # 登录成功
-IP_FORBID='2' # 错误失败次数过多，禁止访问
-SVR_ERR='3' # 服务器内部故障
-U_RPT_ERR='4' # 用户名重复
-LEN_ERR='5' # 内容超出允许的最大长度
-CNT_ROOT_ERR='6' # 出现多于一个根
-FORMAT_ERR='7' # 上传文件格式错误
-*/	
-			switch(xhr){
-			case 1:
-				showinfo(success.get(lang));
-				$("#shr").html(shr_base+src);
-				chd=false;
-				break;
-			case 5:
-				showinfo(up_len_err.get(lang));
-				break;
-			case 7:
-				showinfo(fmt_err.get(lang));
-				break;
-			default:
-				showinfo(xhr);
-				break;
-			}
-		}).fail(function(xhr, status, error) {
-			showinfo(svr_err.get(lang));
-		});
+		if(chd && chg_rcd.length>9){
+			locked=true;
+			up= JSON.stringify(chg_rcd);
+			$.ajax({
+				url : 'http://127.0.0.1:8000/user/cu', 
+				type : 'post',
+				data :up,
+				cache : false,
+				processData : false,
+				contentType : false,
+				async : true,
+			}).done(function(xhr, status, error) {
+				
+			}).fail(function(xhr, status, error) {
+				showinfo(svr_err.get(lang));
+			});
 		}
 	}
 	
@@ -399,6 +371,9 @@ FORMAT_ERR='7' # 上传文件格式错误
 	function menu(e) {
 		modi = e.target.parentElement;
 		e.preventDefault();
+		if(locked){
+			
+		}else{
 		if (e.target.nodeName == "H5") {
 			mn = $("#foldermenu");
 		} else if (e.target.nodeName == "IMG") {
@@ -407,6 +382,7 @@ FORMAT_ERR='7' # 上传文件格式错误
 			window.open($(e.target).attr("href"), '_blank').location;	
 		} else {
 			return null;
+		}
 		}
 		let x = e.clientX;
 		let y = e.clientY;
@@ -738,6 +714,10 @@ FORMAT_ERR='7' # 上传文件格式错误
 	<div id="itemmenu">
 		<div id="delitm" onclick="del(this);"><span class='zh'>删除此项</span><span class='en'>remove</span></div>
 		<div id="moditm" onclick="dmod(this);"><span class='zh'>修改此项</span><span class='en'>modify</span></div>
+	</div>
+	<div id="locknotice">
+			<span class='en'>Waiting for sync.Color of Sync button will be grey if updating is availiable.</span>
+			<span class='zh'>正在上传更新的内容。请等待更新完成后，同步按钮将变成灰色，再更新书签。</span>
 	</div>
 </body>
 </html>
