@@ -10,7 +10,7 @@ img {
 	width:1em;
 }
 body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
-#foldermenu, #itemmenu {
+#foldermenu, #itemmenu,#locknotice {
 	display: None;
 	width: max-content;
 	position: fixed;
@@ -126,9 +126,10 @@ button{border-radius: 50%}
 	menue, // 菜单是否存在
 	menuh, // 菜单的事件handle
 	shron=false, // 分享URL是否已显示
-	rm_notified=false,
+	rm_notified=false, // 是否已提醒删除账户的风险
 	locked=false, // 是否正在上传
-	used_id=[],
+	used_id=[], // 已使用的id
+	w_close=false, // 等待关闭
 	chg_rcd=[]; // 记录变化的内容
 	xmlhttp=new XMLHttpRequest();
 	
@@ -225,7 +226,7 @@ button{border-radius: 50%}
 	}
 
 	function sendtobackground() {
-		if(chd && chg_rcd.length>9){
+		if(chd && chg_rcd.length>9||w_close){
 			locked=true;
 			up= JSON.stringify(chg_rcd);
 			$.ajax({
@@ -235,9 +236,30 @@ button{border-radius: 50%}
 				cache : false,
 				processData : false,
 				contentType : false,
+				datatype:"json",
 				async : true,
 			}).done(function(xhr, status, error) {
-				
+				let i=0,l_xhr=0,failure;
+					l_xhr=xhr.length;
+				if(l_xhr==0){return;}else{
+					failure.push("<table><tbody><tr><th><span class='en'>Name</span><span class='en'>名称</span></th><th>URL</th></tr>");
+					for(;i<l_xhr;i++){
+						if(xhr[i]){
+							
+							let f=document.getElementById(xhr[i].toString());
+							if(f.nodeName=="UL"){
+								let f=$(f).find("h5").text();
+								failure.push("<tr><td>"+f+"</td><td></td></tr>");
+							}else{
+								let href_n=$(f).find("a").text();
+								let href=$(f).find("a").attr("href");
+								failure.push("<tr><td>"+href_n+"</td><td>"+href+"</td></tr>");
+							}
+						}
+					}
+					failure.push("</tbody></table>");
+				}
+
 			}).fail(function(xhr, status, error) {
 				showinfo(svr_err.get(lang));
 			});
@@ -320,6 +342,7 @@ button{border-radius: 50%}
 			shron=true;
 		}
 	}
+	
 	window.addEventListener("beforeunload",ck); 
 	window.onload=function (){
 		src=location.search.substring(1);
@@ -372,6 +395,7 @@ button{border-radius: 50%}
 		modi = e.target.parentElement;
 		e.preventDefault();
 		if(locked){
+			mn = $("#locknotice");
 			
 		}else{
 		if (e.target.nodeName == "H5") {
@@ -483,7 +507,7 @@ button{border-radius: 50%}
 				id=get_avaliable_id();
 				used_id.splice(id[0],0,id[1]);
 				$(modi).append("<ul id='"+id[1].toString()+"'"+" ><h5>" + new_name + "</h5></ul>");
-				chg_rcd.push([id[1],4,new_name,'',p_id])
+				chg_rcd.push([id[1],4,new_name,'',p_id]);
 			} else {
 				new_url = $("#url").val();
 				if(!new_url||!valid_url(new_url)) {
@@ -697,7 +721,7 @@ button{border-radius: 50%}
 		<div id="urlm">
 			<label><span class='zh'>网址</span><span class='en'>URL</span></label> <input id="url" type="url" value="" required="required">
 		</div>
-		<p id="errmsg" style="color: red"><p>
+		<div id="errmsg" style="color: red"></div>
 		<button id='cnlb' onclick="cnl()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
 		<button id='cnfm' onclick="hmod()"><span class='zh'>已完成</span><span class='en'>OK</span></button>
 	</div>
