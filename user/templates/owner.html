@@ -148,6 +148,7 @@ button{border-radius: 50%}
 	const rm_ntc=new Map([['zh','账户的内容将被清空，建议您保留一份内容到本地，点击取消后，可以保存文件至本地，再次点击"清除账户"，完成清除'],
 		['en','All content of this account will be removed, save the webpage locally might be proper, click the "Close Account" again to finish it.']]);
 	const root=new Map([['zh','<ul id="1"><h5>根文件夹</h5></ul>'],['en','<ul id="1"><h5>root folder</h5></ul>']])
+	const root_err=new Map([['zh','可以修改根目录名称，但无法删除'],['en','For root directory,name can be modified but can\'t be deleted.']])
 	const shr_url_err=new Map([['zh','书签正在上传或地址错误，无法分享'],['en','Bookmark is uploading or with wrong address, can not be shared.']]);
 	//const url_err=new Map([['zh',''],['en','']]);
 	
@@ -201,7 +202,7 @@ button{border-radius: 50%}
 							$("#shr").html(shr_base+src);
 						},
 						error:function(res){ showinfo(svr_err.get(lang));}
-					});    
+					});
 				break;}
 		  }).fail(function (res) {
 			showinfo(svr_err.get(lang));
@@ -238,9 +239,9 @@ button{border-radius: 50%}
 				contentType : false,
 				datatype:"json",
 				async : true,
-			}).done(function(xhr, status, error) {
+			}).done(function(xhr, status, error){
 				let i=0,l_xhr=0,failure;
-					l_xhr=xhr.length;
+				l_xhr=xhr.length;
 				if(l_xhr==0){return;}else{
 					failure.push("<table><tbody><tr><th><span class='en'>Name</span><span class='en'>名称</span></th><th>URL</th></tr>");
 					for(;i<l_xhr;i++){
@@ -262,7 +263,6 @@ button{border-radius: 50%}
 					showinfo(failure.join());
 					locked=false;
 				}
-
 			}).fail(function(xhr, status, error) {
 				showinfo(svr_err.get(lang));
 			});
@@ -285,6 +285,9 @@ button{border-radius: 50%}
 			} else{
 				used_id=[1];
 				ifm.innerHTML=root.get(lang);
+				new_name='根文件夹';
+				if(lang=='en'){ new_name='root folder';}
+				chg_rcd.push([1,4,new_name]);
 				$("#shr").html(shr_url_err.get(lang));
 			}
 		}
@@ -593,6 +596,10 @@ button{border-radius: 50%}
 	function del(event) {
 		let j=0,id=0,i=0,kind=3;
 		id=modi.parentElement.id;
+		if(id=='1'){
+				showinfo(svr_err.get(lang));
+				return;
+		}
 		if(modi.parentElement.nodeName=="UL"){kind=6;}
 		/*
 		 * 检查是否已存在
@@ -614,10 +621,7 @@ button{border-radius: 50%}
 		$(modi).remove();
 		chd=true;
 		// 删除使用的ID
-		i=used_id.indexof(id);
-		if(i!=-1){
-			used_id.splice(i,1);
-		}
+		remove_used_id(id);
 		sendtobackground();
 	}
 	// 登出
@@ -644,8 +648,7 @@ button{border-radius: 50%}
 			}
 			showinfo(msg);
 			}
-			)
-	}
+	)}
 		
 	//清除账户
 	function rmv(){

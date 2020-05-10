@@ -256,15 +256,18 @@ def verify_bookmark(cnt):
 
     html_frag = list()
     
-    startheader = "<ul><h5>"
+    startheader_1 = "<ul id=\""
+    startheader_2 = "\"><h5>"
     endheader = "</h5>"
     endheader_tail = "</ul>"
     
-    starthref = '<li><a href="'
+    starthref_1 = '<li id="'
+    starthref_2 = '"><a href="'
     endhref = '">'
     endhref_tail = '</a></li>'
     html_content_len = len(html_content)
     
+    tag_id_cnt=1
     header_level = 0
     j = 0
     while(j < html_content_len):
@@ -294,10 +297,12 @@ def verify_bookmark(cnt):
                     raise ValueError
                 bkmk_name = i[bkmk_name + 1:-4]
                 bkmk_name = escape_char(bkmk_name)
-                html_frag.extend((starthref, href, endhref, bkmk_name, endhref_tail))
+                html_frag.extend([starthref_1,str(tag_id_cnt),starthref_2, href, endhref, bkmk_name, endhref_tail])
+                tag_id_cnt+=1
             elif i[4:7] == "<H3":
             # 文件夹名称
-                html_frag.append(startheader)
+                html_frag.extend([startheader_1,str(tag_id_cnt),startheader_2])
+                tag_id_cnt+=1
                 h5_start = i.find(">", 7) 
                 h5 = i.rfind("</H3>")
                 if h5 == -1 or h5_start == -1 or h5_start > h5:
@@ -317,7 +322,8 @@ def verify_bookmark(cnt):
             header_level -= 1
             html_frag.append(endheader_tail)
         elif i[:4] == "<H1>":
-            html_frag.append(startheader) 
+            html_frag.extend([startheader_1,str(tag_id_cnt),startheader_2])
+            tag_id_cnt+=1 
             h5 = i.rfind("</H1>")
             header_level += 1
             if h5 == -1:

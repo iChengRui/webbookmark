@@ -12,6 +12,7 @@ urlpatterns=[
     path("login",views.ulogin),
     path("logout",views.ulogout),
     path("cu",views.cupdate),
+    path("cup",views.piece_cupdate),
     path("fu",views.fupdate),
     path("del",views.udelete),
     ]
