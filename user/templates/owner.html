@@ -245,19 +245,22 @@ button{border-radius: 50%}
 					failure.push("<table><tbody><tr><th><span class='en'>Name</span><span class='en'>名称</span></th><th>URL</th></tr>");
 					for(;i<l_xhr;i++){
 						if(xhr[i]){
-							
 							let f=document.getElementById(xhr[i].toString());
+							let tag_name=$(f).find("h5").text();
 							if(f.nodeName=="UL"){
-								let f=$(f).find("h5").text();
-								failure.push("<tr><td>"+f+"</td><td></td></tr>");
+								failure.push("<tr><td>"+tag_name +"</td><td></td></tr>");
 							}else{
-								let href_n=$(f).find("a").text();
 								let href=$(f).find("a").attr("href");
-								failure.push("<tr><td>"+href_n+"</td><td>"+href+"</td></tr>");
+								failure.push("<tr><td>"+tag_name+"</td><td>"+href+"</td></tr>");
 							}
+							let ii=used_id.indexof(xhr[i]);
+							if(ii!=-1){used_id.splice(ii,1);}
+							$(f).remove();
 						}
 					}
 					failure.push("</tbody></table>");
+					showinfo(failure.join());
+					locked=false;
 				}
 
 			}).fail(function(xhr, status, error) {
@@ -526,7 +529,7 @@ button{border-radius: 50%}
 				chd = true;
 		} else {
 			if (new_name != old_name || new_url != old_url) {
-				let i,id=0,kind=2;
+				let i,j=0,id=0,kind=2;
 				if(old_url){
 					new_url = $("#url").val();
 					if(!new_url||!valid_url(new_url)) {
@@ -550,10 +553,27 @@ button{border-radius: 50%}
 				}
 				$(i).text(new_name);
 				if(new_name==old_name){new_name='';}
-				chg_rcd.push([id,kind,new_name,new_url]);
+				/*
+				 * 检查是否已存在
+				 */
+				i=chg_rcd.length;
+				while(j<i&&chr_rcd[j][0]!=id){
+					j=j+1;
+				}
+				if(chr_rcd[j][0]!=id||chr_rcd[j][1]==3||chr_rcd[j][1]==6){
+					chg_rcd.push([id,kind,new_name,new_url]);
+				}else{
+					if(new_name){
+						chr_rcd[j][2]=new_name;
+					}
+					if(new_url){
+						chr_rcd[j][3]=new_url;
+					}
+				}
 				chd = true;
 			}
 		}
+		if(chd){sendtobackground();}
 	}
 	// 折叠文件夹
 	function cps(event) {
@@ -667,6 +687,9 @@ button{border-radius: 50%}
 		}
 		return [u_id_l,used_id[u_id_l-1]+1];
 	}
+	/*
+	 * 移除未使用的ID
+	 */
 	function remove_used_id(rm_id){
 		let idx=0;
 		for(let i in rm_id){
