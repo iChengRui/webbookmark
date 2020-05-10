@@ -133,7 +133,8 @@ def uregister(req):
 
             login(req, obj)
             
-            rsp = HttpResponse('"' + uname_m_fname(username) + '"', content_type='application/json')
+            rsp = HttpResponse('"' + uname_m_fname(username) + '"', 
+               content_type='application/json')
             rsp.set_cookie('login', 1, secure=False)
             return rsp
         else:
@@ -199,6 +200,10 @@ def verify_html(str_l):
             c_cnt = len(child)
             if c_cnt > 1:
                 if child.tag == 'ul':
+                    attr = child_href.attrib
+                    if (len(attr)>1 or not attr.has_key("id")
+                        or not isinstance(attr['id'], int)):
+                        raise ValueError
                     container.append(child)
                     child_cnt.append(c_cnt - 1)
                     cur[-1] = idx + 1
@@ -207,23 +212,25 @@ def verify_html(str_l):
                     raise ValueError
             else:
                 if child.tag == "h5":
-                    if len(child.attrib) or \
-                    gc_escape_char.search(child.text):
+                    if (child.attrib
+                         or gc_escape_char.search(child.text)):
                         raise ValueError
+                    
                 elif child.tag == "li":
                     attr = child.attrib
                     child_href = child[0]
-                    if len(attr) or child_href.tag != 'a':
+                    if (len(attr)>1 or not attr.has_key("id")
+                        or not isinstance(attr['id'], int) 
+                        or child_href.tag != 'a'):
                         raise ValueError
                     
                     attr = child_href.attrib
-                    if len(attr) != 1 or \
-                        not attr.has_key("href") or \
-                        gc_escape_char.search(child_href.text) or \
-                        not URL_CHECK(attr["href"]):
-                        # not gc_url.match(attr["href"]):
+                    if (len(attr) != 1 or 
+                        not attr.has_key("href") or 
+                        gc_escape_char.search(child_href.text) or 
+                        not URL_CHECK(attr["href"])):
                         raise ValueError
-                else:    
+                else:
                     raise ValueError
                 cur[-1] = idx + 1
         else:
@@ -233,6 +240,11 @@ def verify_html(str_l):
 
 
 def content_update(str_l, username):
+    """
+    适用于用户上传保存失败的内容。
+    str_l为列表，str_l[0]为用户上传的字符串，二进制形式
+    返回修改后的列表及格式是否正确
+    """
     if len(str_l[0]) > CONTENT_MAX_LEN:
         str_l.append(LEN_ERR)
         return False
@@ -252,103 +264,106 @@ def verify_bookmark(cnt):
     """
     将浏览器导出的书签（html格式）转换为所需的格式
     """
-    html_content = cnt.split('\n')
+    html_content = cnt.split(b'\n')
 
     html_frag = list()
     
-    startheader_1 = "<ul id=\""
-    startheader_2 = "\"><h5>"
-    endheader = "</h5>"
-    endheader_tail = "</ul>"
+    startheader_1 = b"<ul id=\""
+    startheader_2 = b"\"><h5>"
+    endheader = b"</h5>"
+    endheader_tail = b"</ul>"
     
-    starthref_1 = '<li id="'
-    starthref_2 = '"><a href="'
-    endhref = '">'
-    endhref_tail = '</a></li>'
+    starthref_1 = b'<li id="'
+    starthref_2 = b'"><a href="'
+    endhref = b'">'
+    endhref_tail = b'</a></li>'
     html_content_len = len(html_content)
     
     tag_id_cnt=1
     header_level = 0
     j = 0
     while(j < html_content_len):
-        i = html_content[j].strip('  \n')
+        i = html_content[j].strip(b'  \n')
         if len(i) < 3:
             j += 1
             continue
-        if i[:4] == "<DT>":
+        if i[:4] == b"<DT>":
             # 书签或文件夹名
-            if i[4:13] == "<A HREF=\"":
+            if i[4:13] == b"<A HREF=\"":
                 # 书签链接
-                href_p = i.find('"', 15)
+                href_p = i.find(b'"', 15)
                 if href_p == -1:
                     raise ValueError
                 href = i[13:href_p]
-                # if href[-1]=='/':
-                #     href=href[:-1]
-                # if not gc_url.match(href):
-                # if not URL_CHECK(href):
                 try:
-                    URL_CHECK(href)
+                    URL_CHECK(href.decode("utf8"))
                 except Exception:
                     raise ValueError
                 # 书签名称
-                bkmk_name = i.find(">", href_p)
+                bkmk_name = i.find(b">", href_p)
                 if bkmk_name == -1:
                     raise ValueError
-                bkmk_name = i[bkmk_name + 1:-4]
-                bkmk_name = escape_char(bkmk_name)
-                html_frag.extend([starthref_1,str(tag_id_cnt),starthref_2, href, endhref, bkmk_name, endhref_tail])
+                bkmk_name = i[bkmk_name + 1:-4].decode("utf8")
+                bkmk_name = escape_char(bkmk_name).encode("utf8")
+                html_frag.extend(
+                    [starthref_1,str(tag_id_cnt).encode("utf8"),
+                    starthref_2, href, endhref, bkmk_name,
+                    endhref_tail])
                 tag_id_cnt+=1
-            elif i[4:7] == "<H3":
+            elif i[4:7] == b"<H3":
             # 文件夹名称
-                html_frag.extend([startheader_1,str(tag_id_cnt),startheader_2])
+                html_frag.extend(
+                    [startheader_1, str(tag_id_cnt).encode("utf8"),
+                    startheader_2])
                 tag_id_cnt+=1
-                h5_start = i.find(">", 7) 
-                h5 = i.rfind("</H3>")
+                h5_start = i.find(b">", 7) 
+                h5 = i.rfind(b"</H3>")
                 if h5 == -1 or h5_start == -1 or h5_start > h5:
                     raise ValueError
                 h5 = i[h5_start + 1:h5]
-                h5 = escape_char(h5)
-                html_frag.append(h5) 
+                h5 = escape_char(h5.decode("utf8"))
+                html_frag.append(h5.encode("utf8")) 
                 html_frag.append(endheader) 
                 j += 1
-                i = html_content[j].strip('  \n')
-                if i != "<DL><p>":
+                i = html_content[j].strip(b'  \n')
+                if i !=b"<DL><p>":
                     raise ValueError
                 header_level += 1
             else:
                 raise ValueError
-        elif i[:5] == "</DL>":
+        elif i[:5] == b"</DL>":
             header_level -= 1
             html_frag.append(endheader_tail)
-        elif i[:4] == "<H1>":
-            html_frag.extend([startheader_1,str(tag_id_cnt),startheader_2])
+        elif i[:4] == b"<H1>":
+            html_frag.extend(
+                [startheader_1,str(tag_id_cnt).encode("utf8"),
+                startheader_2])
             tag_id_cnt+=1 
-            h5 = i.rfind("</H1>")
+            h5 = i.rfind(b"</H1>")
             header_level += 1
             if h5 == -1:
                 raise ValueError
             h5 = i[4:h5]
-            h5 = escape_char(h5)
-            html_frag.append(h5) 
+            h5 = escape_char(h5.decode("utf8"))
+            html_frag.append(h5.encode("utf8")) 
             html_frag.append(endheader) 
             while True:
                 j += 1
-                i = html_content[j].strip('  \n')
+                i = html_content[j].strip(b'  \n')
                 if not i:
                     continue
-                elif i != "<DL><p>":
+                elif i != b"<DL><p>":
                     raise ValueError
                 else:
                     break
         else:
-            pass    
+            pass
         j += 1
     if header_level < 0:
         raise ValueError
     else:
         html_frag.append(endheader_tail * header_level)
-    return ''.join(html_frag)
+    return b''.join(html_frag)
 
     
 @login_required
@@ -357,27 +372,27 @@ def fupdate(req):
     通过上传文件取得书签
     """
     uf = req.FILES["upfile"]
-    content = uf.read().strip().decode(encoding="utf-8")
+    content = uf.read().strip()
     uf.close()
     if len(content) < 19:
         return HttpResponse(LEN_ERR, content_type='application/json')
     # 去除可能的div
-    if content[:4] == "<div":
-        div_e = content.find(">")
+    if content[:4] == b"<div":
+        div_e = content.find(b">")
         if div_e == -1:
             return HttpResponse(FORMAT_ERR, content_type='application/json')
         content = content[div_e + 1:-7]
-    if content[:4] == "<ul>":
+    if content[:4] == b"<ul>":
         # 删除img标签
-        content = gc_img.sub('', content)
+        content = gc_img.sub(b'', content)
         # 删除a标签的target属性
-        content = gc_a_target.sub('', content)
+        content = gc_a_target.sub(b'', content)
         str_l = [content]
         if content_update(str_l, req.user.username):
             return HttpResponse('"' + str_l[1] + '"', content_type='application/json')
         else:
             return HttpResponse(FORMAT_ERR, content_type='application/json')
-    elif content[:9] == "<!DOCTYPE":
+    elif content[:9] == b"<!DOCTYPE":
         try:
             content = verify_bookmark(content)
         except ValueError:
@@ -385,7 +400,7 @@ def fupdate(req):
         if len(content) > CONTENT_MAX_LEN:
             return HttpResponse(LEN_ERR, content_type='application/json')
         fname = uname_m_fname(req.user.username) 
-        with gzip.open(MEDIA_ROOT + fname + ".gz", 'wt', 6, encoding='utf8') as f:
+        with gzip.open(MEDIA_ROOT + fname + ".gz", 'wb', 6) as f:
             f.write(content)
         return HttpResponse('"' + fname + '"', content_type='application/json')
     else:
@@ -472,9 +487,11 @@ def piece_cupdate(req):
                 except Exception:
                     err_itm.append(i[0]) 
                     continue
-                new_itm = "<li id=\"" + str(i[0]) + '"' + "><a href=\"" + i[3] + '">' + i[2] + "</a></li>"
+                new_itm = ("<li id=\"" + str(i[0]) + '"'
+                    "><a href=\"" + i[3] + '">' + i[2] + "</a></li>")
             else:
-                new_itm = "<ul id=\"" + str(i[0]) + '"' + "><h5>" + i[2] + "</h5></ul>"
+                new_itm = ("<ul id=\"" + str(i[0]) + '"' + "><h5>"
+                    i[2] + "</h5></ul>")
             
             s = "id=\"" + str(i[4]) + '"'
             idx, idx_s = find_str(old_c, s)
@@ -490,7 +507,8 @@ def piece_cupdate(req):
                 continue
             
             if old_c[idx][-5:] != "</h5>":
-                itm0, itm1 = old_c[idx][:idx_s + 6], old_c[idx][idx_s + 6:]
+                itm0= old_c[idx][:idx_s + 6]
+                itm1=old_c[idx][idx_s + 6:]
                 del old_c[idx]       
                 old_c[idx:idx] = itm0, new_itm, itm1
             else:
@@ -535,7 +553,8 @@ def piece_cupdate(req):
                     if idx_label == -1:
                         err_itm.append(i[0]) 
                         continue
-                    pieces.extend([itm0[:idx_label + 1], i[2], '</a></li>'])
+                    pieces.extend([itm0[:idx_label + 1], i[2],
+                        '</a></li>'])
             
             pieces.append(itm1)
             del old_c[idx]
@@ -594,7 +613,8 @@ def piece_cupdate(req):
                 continue
             
             # <ul id=
-            header_s = old_c[header].find("<ul" , max(header_s - 5, 0), header_s)
+            header_s = old_c[header].find("<ul" ,
+                max(header_s - 5, 0), header_s)
             deepth = 0
             # TODO内部格式错误
             if header_s == -1:
