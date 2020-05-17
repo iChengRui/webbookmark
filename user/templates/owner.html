@@ -224,7 +224,6 @@ function escapeHtml (string) {
 		$("#cnlupf").hide();
 		$("#hupf").hide();
 		$("#errmsgf").html(upf_ntc.get(lang));
-		chd=false;
 		  $.ajax({
 			url: '/user/fu',
 			type: 'post',
@@ -253,11 +252,15 @@ function escapeHtml (string) {
 						contentType : false,
 						async : true,
 						success:function(xhr, status, error) {
-							ifm.innerHTML=	xhr;
+							ifm.innerHTML=xhr;
 							addimg("#ifm li");
 							rm_a("#ifm li");
 							$("#shr").html(shr_base+src);
 							ok=true;
+							chg_rcd=[];
+							chd=false;
+							locked=false;
+							used_id=get_used_id();
 						},
 						error:function(res){$("errmsgf").html(svr_err.get(lang));}
 					});
@@ -282,7 +285,7 @@ function escapeHtml (string) {
 		$("#feedback").show();
 	}
 	
-	function clsfbk(){
+	function cls_fbk(){
 		$("#feedback").hide();
 	}
 	
@@ -330,12 +333,12 @@ function escapeHtml (string) {
 					failure.push("</tbody></table>");
 					showfbk(failure.join());
 					chg_rcd=[];
-					locked=false;
 				}
 			}).fail(function(xhr, status, error) {
 				showfbk(svr_err.get(lang));
-				locked=false;
 			});
+		locked=false;
+		chd=false;
 		}
 	}
 	
@@ -471,18 +474,20 @@ function escapeHtml (string) {
 	function menu(e) {
 		modi = e.target.parentElement;
 		e.preventDefault();
+		if(e.target.nodeName == "A"){
+			window.open($(e.target).attr("href"), '_blank').location;	
+			return null;
+		}
 		if(locked){
 			mn = $("#locknotice");
 		}else{
-		if (e.target.nodeName == "H5") {
-			mn = $("#foldermenu");
-		} else if (e.target.nodeName == "IMG") {
-			mn = $("#itemmenu");
-		} else if(e.target.nodeName == "A"){
-			window.open($(e.target).attr("href"), '_blank').location;	
-		} else {
-			return null;
-		}
+			if (e.target.nodeName == "H5") {
+				mn = $("#foldermenu");
+			} else if (e.target.nodeName == "IMG") {
+				mn = $("#itemmenu");
+			} else {
+				return null;
+			}
 		}
 		console.log(e.target.nodeName);
 		let x = e.clientX;
@@ -546,7 +551,7 @@ function escapeHtml (string) {
 			add_folder = false;
 		}
 	}
-	// 显示修改和新增
+	// 显示修改和新增遮罩层
 	function dmod(e) {
 		hidemenu();
 		add=false;
@@ -604,6 +609,7 @@ function escapeHtml (string) {
 		} else {
 			if (new_name != old_name || new_url != old_url) {
 				let i,j=0,id=0,kind=2;
+				id=p_id;
 				if(old_url){
 					new_url = $("#url").val();
 					if(!new_url||!valid_url(new_url)) {
@@ -612,17 +618,15 @@ function escapeHtml (string) {
 					}
 					i = $(modi).children("a")[0];
 					$(i).attr({href:new_url});
-					id=modi.parentElement.id;
 					if(new_url!=old_url){
 						let sr=new_url;
-						sr=get_base(sr);
+						sr=get_base(sr)+"favicon.ico";
 						$(modi).find("img").attr({src:sr});
 					}else{
 						new_url='';
 					}
 				}else{
 					kind=5;
-					id=modi.parentElement.id;
 					i = $(modi).children("h5")[0];
 				}
 				$(i).text(new_name);
@@ -636,7 +640,7 @@ function escapeHtml (string) {
 					j=j-1;
 				}
 				if(j>0){j=j-1};
-				if(i&&chg_rcd[j][0]!=id||chg_rcd[j][1]==3||chg_rcd[j][1]==6){
+				if(!i||chg_rcd[j][0]!=id||chg_rcd[j][1]==3||chg_rcd[j][1]==6){
 					chg_rcd.push([id,kind,new_name,new_url]);
 				}else{
 					if(new_name){
@@ -667,12 +671,12 @@ function escapeHtml (string) {
 	// 删除文件夹或子书签
 	function del(event) {
 		let j=0,id=0,i=0,kind=3;
-		id=modi.parentElement.id;
+		id=modi.id;
 		if(id=='1'){
 				showfbk(svr_err.get(lang));
 				return;
 		}
-		if(modi.parentElement.nodeName=="UL"){kind=6;}
+		if(modi.nodeName=="UL"){kind=6;}
 		/*
 		 * 检查是否已存在
 		 */
@@ -684,14 +688,20 @@ function escapeHtml (string) {
 		}
 		if(j>0){j=j-1};
 		if(i&&chg_rcd[j][0]==id&&(chg_rcd[j][0]!=3||chg_rcd[j][0]!=6)){
-			chg_rcd[j][1]=kind;
-			chg_rcd[j].splice(2,3);
+			if(chg_rcd[j][0]==1||chg_rcd[j][0]==4){
+				chg_rcd.splice(j,1);
+			}else{
+				chg_rcd[j][1]=kind;
+				chg_rcd[j].splice(2,3);
+				chd=true;
+			}
 		}else{
+			chd=true;
 			chg_rcd.push([id,kind]);
 		}
 		hidemenu();
+		// TODO  删除文件夹时，记录所有使用的ID
 		$(modi).remove();
-		chd=true;
 		// 删除使用的ID
 		remove_used_id(id);
 		sendtobackground();
@@ -807,7 +817,7 @@ function escapeHtml (string) {
 	<div id='feedback'>
 	<div id='msgfbk'>
 	</div>
-	<button id='clsfbk' onclick="clsfbk()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
+	<button id='clsfbk' onclick="cls_fbk()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
 	</div>
 	</div>
 
