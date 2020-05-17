@@ -61,55 +61,56 @@ button{border-radius: 50%}
 
 <script>
 	var matchHtmlRegExp = /["'&<>]/
-		function escapeHtml (string) {
-		  var str = '' + string
-		  var match = matchHtmlRegExp.exec(str)
+	var r=new RegExp("^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$");
+	
+function escapeHtml (string) {
+	  var str = '' + string
+	  var match = matchHtmlRegExp.exec(str)
 
-		  if (!match) {
-		    return str
-		  }
+	  if (!match) {
+		return str
+	  }
 
-		  var escape
-		  var html = ''
-		  var index = 0
-		  var lastIndex = 0
+	  var escape
+	  var html = ''
+	  var index = 0
+	  var lastIndex = 0
 
-		  for (index = match.index; index < str.length; index++) {
-		    switch (str.charCodeAt(index)) {
-		      case 34: // "
-		        escape = '&quot;'
-		        break
-		      case 38: // &
-		        escape = '&amp;'
-		        break
-		      case 39: // '
-		        escape = '&#39;'
-		        break
-		      case 60: // <
-		        escape = '&lt;'
-		        break
-		      case 62: // >
-		        escape = '&gt;'
-		        break
-		      default:
-		        continue
-		    }
-
-		    if (lastIndex !== index) {
-		      html += str.substring(lastIndex, index)
-		    }
-
-		    lastIndex = index + 1
-		    html += escape
-		  }
-
-		  return lastIndex !== index
-		    ? html + str.substring(lastIndex, index)
-		    : html
+	  for (index = match.index; index < str.length; index++) {
+		switch (str.charCodeAt(index)) {
+		  case 34: // "
+			escape = '&quot;'
+			break
+		  case 38: // &
+			escape = '&amp;'
+			break
+		  case 39: // '
+			escape = '&#39;'
+			break
+		  case 60: // <
+			escape = '&lt;'
+			break
+		  case 62: // >
+			escape = '&gt;'
+			break
+		  default:
+			continue
 		}
+
+		if (lastIndex !== index) {
+		  html += str.substring(lastIndex, index)
+		}
+
+		lastIndex = index + 1
+		html += escape
+	  }
+
+	  return lastIndex !== index
+		? html + str.substring(lastIndex, index)
+		: html
+	}
 	
 	function valid_url(str){
-		let r=new RegExp("^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$");
 		return r.test(str);
 	}
 	
@@ -139,7 +140,8 @@ button{border-radius: 50%}
 	const up_len_err=new Map([['zh','最多允许65536个字符(2^16),请删除不必要的书签或使用简短的名称，如有其他事情，可先保存至本地'],
 		['en','at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.']]);
 	const url_err=new Map([['zh','网址为空或包含不允许的字符或格式错误，请修改'],['en','url is blank or contains illegal chars & fomart']]);
-	const svr_err=new Map([['zh','服务器内部故障，请发送邮件至1575658778@qq.com'],['en','server internal error,please email to 1575658778@qq.com']]);
+	const svr_err=new Map([['zh','服务器内部故障，所有您的更新可能丢失。若正在使用电脑的浏览器，可将内容保存至本地，请点击"帮助"按钮获取操作步骤；对于其他设备，暂无补救方案。请发送邮件至1575658778@qq.com，告知故障，以便维护。'],
+		['en','server internal error,all updated content may be lost. With computer, you can save those bookmark locally and steps are in "help" page;for other devices,there is no remedy. Please email to 1575658778@qq.com for repair.']]);
 	const name_err=new Map([['zh','名称为空，请输入名称'],['en','name is blank']]);
 	const success=new Map([['zh','上传成功'],['en','Upload finished']]);
 	const saved_err=new Map([['zh','文件未保存，请先保存，若要放弃保存直接关闭页面'],['en','File is not saved,please save it at first.If you don\'t want to save,close Tab-page directly.']]);
@@ -152,9 +154,59 @@ button{border-radius: 50%}
 	const shr_url_err=new Map([['zh','书签正在上传或地址错误，无法分享'],['en','Bookmark is uploading or with wrong address, can not be shared.']]);
 	//const url_err=new Map([['zh',''],['en','']]);
 	
+	/*
+	 * 移除未使用的ID
+	 */
+	function remove_used_id(rm_id){
+		let idx=0;
+		let rm=new Array();
+		if(typeof rm_id =="number"){rm.push(rm_id);}else{rm=rm_id;}
+		for(let i in rm){
+			idx=used_id.indexOf(i,idx);
+			if(idx!=-1){usd_id.splice(idx,1);}
+		}
+	} 
+	
+	// 获取已使用的id
+	function get_used_id(){
+		let all_id=[];
+		let ul_e=document.getElementsByTagName("ul");
+		let li_e=document.getElementsByTagName("li");
+		
+		for(let e in ul_e){
+			all_id.push(e.id);			
+		}
+		for(let e in li_e){
+			all_id.push(e.id);			
+		}
+		all_id.sort();
+		return all_id; 
+	}
+	
+	function get_avaliable_id(){
+		let u_id_l=used_id.length;
+		if(u_id_l>1){
+			u_id_l=u_id_l-1;
+			let i=0;
+			while(i<u_id_l){
+				if(used_id[i+1]-used_id[i]==1){
+					i=i+1;
+				}else{
+					return [i+1,used_id[i]+1];
+				}
+			}
+		}else if(u_id_l){
+			return [1,used_id[0]+1];
+		}else{
+			return [0,1];
+		}
+		return [u_id_l,used_id[u_id_l-1]+1];
+	}
+
 	function UploadFile(){
 		let uf=document.getElementById("upf");
 		uf.style.display='flex';
+		$("clsf").hide();
 	}
 	
 	function cnlupf(){
@@ -162,11 +214,15 @@ button{border-radius: 50%}
 		let uf=document.getElementById("upf");
 		uf.style.display='none';
 	}
+	function clsf(){cnlupf();}
 	
 	function hupf(){
 		let formData=new FormData($("#fm")[0]);
 		setTimeout(cnlupf,3*1000);
 		$("#shr").html(shr_url_err.get(lang));
+		$("cnlupf").hide();
+		$("hupf").hide();
+		$("errmsgf").html(upf_ntc.get(lang));
 		chd=false;
 		  $.ajax({
 			url: '/user/fu',
@@ -179,13 +235,13 @@ button{border-radius: 50%}
 		  }).done(function (res) {
 			  switch(res){
 				case 5:
-					showinfo(up_len_err.get(lang));
+					$("errmsgf").html(up_len_err.get(lang));
 					break;
 				case 6:
-					showinfo(root_count_err.get(lang));
+					$("errmsgf").html(root_count_err.get(lang));
 					break;
 				case 7:
-					showinfo(fmt_err.get(lang));
+					$("errmsgf").html(fmt_err.get(lang));
 					break;
 				default:
 					$.ajax({
@@ -201,11 +257,13 @@ button{border-radius: 50%}
 							rm_a("#ifm li");
 							$("#shr").html(shr_base+src);
 						},
-						error:function(res){ showinfo(svr_err.get(lang));}
+						error:function(res){$("errmsgf").html(svr_err.get(lang));}
 					});
 				break;}
+				$("clsf").show();
 		  }).fail(function (res) {
-			showinfo(svr_err.get(lang));
+			$("errmsgf").html(svr_err.get(lang));
+			$("clsf").show();
 		  });
 	}
 	
@@ -254,17 +312,17 @@ button{border-radius: 50%}
 								let href=$(f).find("a").attr("href");
 								failure.push("<tr><td>"+tag_name+"</td><td>"+href+"</td></tr>");
 							}
-							let ii=used_id.indexof(xhr[i]);
-							if(ii!=-1){used_id.splice(ii,1);}
-							$(f).remove();
+							remove_used_id(xhr[i]);
 						}
 					}
 					failure.push("</tbody></table>");
 					showinfo(failure.join());
+					chg_rcd=[];
 					locked=false;
 				}
 			}).fail(function(xhr, status, error) {
 				showinfo(svr_err.get(lang));
+				locked=false;
 			});
 		}
 	}
@@ -402,7 +460,6 @@ button{border-radius: 50%}
 		e.preventDefault();
 		if(locked){
 			mn = $("#locknotice");
-			
 		}else{
 		if (e.target.nodeName == "H5") {
 			mn = $("#foldermenu");
@@ -475,7 +532,7 @@ button{border-radius: 50%}
 			add_folder = false;
 		}
 	}
-	// 显示修改
+	// 显示修改和新增
 	function dmod(e) {
 		hidemenu();
 		add=false;
@@ -492,6 +549,15 @@ button{border-radius: 50%}
 		}
 			old_name = $(i).text();
 			$("#name").val(old_name);
+	}
+	// 检测name
+	function ck_name(){
+		if(!$("name").val()){$("errmsg").html(name_err.get(lang));}
+	}
+	// 检测url
+	function ck_url(){
+		let i=document.getElementById("url");
+		if(!valid_url($("name").val())||!i.reportValidity()){$("errmsg").html(url_err.get(lang));}
 	}
 	// 取消
 	function cnl(){
@@ -580,6 +646,7 @@ button{border-radius: 50%}
 		}
 		if(chd){sendtobackground();}
 	}
+	
 	// 折叠文件夹
 	function cps(event) {
 		hidemenu();
@@ -678,51 +745,6 @@ button{border-radius: 50%}
 		window.open("/help.html", '_blank').location;	
 	}
 	
-	// 获取已使用的id
-	function get_used_id(){
-		let all_id=[];
-		let ul_e=document.getElementsByTagName("ul");
-		let li_e=document.getElementsByTagName("li");
-		
-		for(let e in ul_e){
-			all_id.push(e.id);			
-		}
-		for(let e in li_e){
-			all_id.push(e.id);			
-		}
-		all_id.sort();
-		return all_id; 
-	}
-	
-	function get_avaliable_id(){
-		let u_id_l=used_id.length;
-		if(u_id_l>1){
-			u_id_l=u_id_l-1;
-			let i=0;
-			while(i<u_id_l){
-				if(used_id[i+1]-used_id[i]==1){
-					i=i+1;
-				}else{
-					return [i+1,used_id[i]+1];
-				}
-			}
-		}else if(u_id_l){
-			return [1,used_id[0]+1];
-		}else{
-			return [0,1];
-		}
-		return [u_id_l,used_id[u_id_l-1]+1];
-	}
-	/*
-	 * 移除未使用的ID
-	 */
-	function remove_used_id(rm_id){
-		let idx=0;
-		for(let i in rm_id){
-			idx=used_id.indexOf(i,idx);
-			if(idx!=-1){usd_id.splice(idx,1);}
-		}
-	} 
 </script>
 </head>
 
@@ -751,7 +773,7 @@ button{border-radius: 50%}
 <div id='shrinfo'>
 	<label><span class="zh">用于分享的网址:</span><span class="en">URL for share:</span></label>
 	<p id="shr"></p>
-	<p><span class="zh">此链接与用户名绑定，不会因内容变化而变化</span><span class="en">This URL is associated with your username, won't change with modification of contents.</span>
+	<p><span class="zh">此链接与用户名绑定，不会因内容变化而变化</span><span class="en">This URL is associated with your username, won&#39;t change with modification of contents.</span>
 	<a href=""><span class="zh">转换为二维码</span><span class="en">make QR code</span></a>
 </div>
 	<div id="ifm" ></div>
@@ -759,20 +781,23 @@ button{border-radius: 50%}
 		<form id="fm" onsubmit="return false;" enctype="multipart/form-data">
 		<label><span class='zh'>文件地址</span></label><span class='en'>File Address</span> <input type="file" name='upfile' required="required">
 		<p id="errmsgf"></p>
-		<button onclick="cnlupf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
-		<button onclick="hupf()"><span class='zh'>上传</span><span class='en'>upload</span></button>
+		<button id='cnlupf' onclick="cnlupf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
+		<button id='hupf' onclick="hupf()"><span class='zh'>上传</span><span class='en'>Upload</span></button>
+		<button id='clsf' onclick="clsf()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
 		</form>
 	</div>
 	<div id='mod'>
 		<div>
-		<label><span class='zh'>名称</span></label><span class='en'>name</span> <input id="name" type="text" value="" required="required">
+		<label><span class='zh'>名称</span></label><span class='en'>name</span> <input onblur="ck_name()" id="name" type="text" value="" required="required">
 		</div>
 		<div id="urlm">
-			<label><span class='zh'>网址</span><span class='en'>URL</span></label> <input id="url" type="url" value="" required="required">
+			<label><span class='zh'>网址</span><span class='en'>URL</span></label> <input onblur="ck_url()" id="url" type="url" value="" required="required">
 		</div>
 		<div id="errmsg" style="color: red"></div>
 		<button id='cnlb' onclick="cnl()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
 		<button id='cnfm' onclick="hmod()"><span class='zh'>已完成</span><span class='en'>OK</span></button>
+	</div>
+	<div id='feedback'>
 	</div>
 
 	<div id="foldermenu">
