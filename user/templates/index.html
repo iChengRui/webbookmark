@@ -44,13 +44,14 @@ margin:0;
 #cfm>*{display:block;margin:1ex 0;}
 label{font-size:large;}
 </style>
-<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<!-- <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script> -->
+<script src="/jQuery2.1.4.js"></script>
 <script>
 	var lang; //language
 	var submited=true; //是否为提交，用于显示错误信息
 	const u_err=new Map([['zh','用户名'],['en','username']]);
 	const p_err=new Map([['zh','密码'],['en','password']]);
-	const fdbck_err=new Map([['zh','密码或用户名不符合要求或错误，请修改'],['en','username or password is wrong,modify it']]);
+	const fdbck_err=new Map([['zh','密码或用户名不符合要求或错误或不存在，请修改'],['en','username or password is wrong or dosen\'t exist,modify it']]);
 	const svr_err=new Map([['zh','服务器内部故障，请发送邮件至1575658778@qq.com'],['en','server internal error,please email to 1575658778@qq.com']]);
 	const ip_err=new Map([['zh','此IP错误超过5次，请于24小时后访问'],['en','five times failure with this ip,please try again after 24 hours']]);
 	const len_err=new Map([['zh',' 字符数少于5个或多于12个'],['en',' chars are less than 5 or more than 12']]);

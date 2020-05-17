@@ -132,10 +132,10 @@ def uregister(req):
                 return HttpResponse(msg, content_type='application/json')
 
             login(req, obj)
-            
-            rsp = HttpResponse('"' + uname_m_fname(username) + '"', 
+            fname=uname_m_fname(username) 
+            rsp = HttpResponse('"' + fname + '"', 
                content_type='application/json')
-            rsp.set_cookie('login', 1, secure=False)
+            rsp.set_cookie('login', fname[:CHK_LEN], secure=False)
             return rsp
         else:
             return HttpResponse(U_P_ERR, content_type='application/json')
@@ -490,7 +490,7 @@ def piece_cupdate(req):
                 new_itm = ("<li id=\"" + str(i[0]) + '"'
                     "><a href=\"" + i[3] + '">' + i[2] + "</a></li>")
             else:
-                new_itm = ("<ul id=\"" + str(i[0]) + '"' + "><h5>"
+                new_itm = ("<ul id=\"" + str(i[0]) + '"' + "><h5>"+
                     i[2] + "</h5></ul>")
             
             s = "id=\"" + str(i[4]) + '"'

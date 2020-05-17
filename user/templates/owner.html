@@ -32,7 +32,7 @@ body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
 	visibility:hidden;
 }
 
-#mod,#upf {
+#mod,#upf,#feedback {
 	display: none;
 	height: 100%;
 	width: 100%;
@@ -124,7 +124,7 @@ function escapeHtml (string) {
 	add_folder = true,// 新建的内容类型 true folder:false item
 	ifm, // 内容窗格
 	mn, // 菜单
-	menue, // 菜单是否存在
+	menue=false, // 菜单是否存在
 	menuh, // 菜单的事件handle
 	shron=false, // 分享URL是否已显示
 	rm_notified=false, // 是否已提醒删除账户的风险
@@ -206,7 +206,7 @@ function escapeHtml (string) {
 	function UploadFile(){
 		let uf=document.getElementById("upf");
 		uf.style.display='flex';
-		$("clsf").hide();
+		$("#clsf").hide();
 	}
 	
 	function cnlupf(){
@@ -218,11 +218,9 @@ function escapeHtml (string) {
 	
 	function hupf(){
 		let formData=new FormData($("#fm")[0]);
-		setTimeout(cnlupf,3*1000);
-		$("#shr").html(shr_url_err.get(lang));
-		$("cnlupf").hide();
-		$("hupf").hide();
-		$("errmsgf").html(upf_ntc.get(lang));
+		$("#cnlupf").hide();
+		$("#hupf").hide();
+		$("#errmsgf").html(upf_ntc.get(lang));
 		chd=false;
 		  $.ajax({
 			url: '/user/fu',
@@ -235,13 +233,13 @@ function escapeHtml (string) {
 		  }).done(function (res) {
 			  switch(res){
 				case 5:
-					$("errmsgf").html(up_len_err.get(lang));
+					$("#errmsgf").html(up_len_err.get(lang));
 					break;
 				case 6:
-					$("errmsgf").html(root_count_err.get(lang));
+					$("#errmsgf").html(root_count_err.get(lang));
 					break;
 				case 7:
-					$("errmsgf").html(fmt_err.get(lang));
+					$("#errmsgf").html(fmt_err.get(lang));
 					break;
 				default:
 					$.ajax({
@@ -260,20 +258,26 @@ function escapeHtml (string) {
 						error:function(res){$("errmsgf").html(svr_err.get(lang));}
 					});
 				break;}
-				$("clsf").show();
+				$("#clsf").show();
 		  }).fail(function (res) {
-			$("errmsgf").html(svr_err.get(lang));
-			$("clsf").show();
+			$("#errmsgf").html(svr_err.get(lang));
+			$("#clsf").show();
 		  });
 	}
 	
-	function showinfo(txt){
-		$(mod).css({'display':"flex"});
-		$(mod).children("div").hide();
-		$(mod).find("#cnfm").hide();
-		$("#errmsg").html(txt);
-		$("#errmsg").show();
+	function showfbk(txt){
+		$("#msgfbk").html('');
+		if(txt[0]!="<"){
+			txt='<p>'+txt+"</p>";
+		}
+		$("#msgfbk").html(txt);
+		$("#feedback").show();
 	}
+	
+	function clsfbk(){
+		$("#feedback").hide();
+	}
+	
 
 	function get_default_lang(){
 		let la=navigator.language||navigator.userLanguage;
@@ -316,12 +320,12 @@ function escapeHtml (string) {
 						}
 					}
 					failure.push("</tbody></table>");
-					showinfo(failure.join());
+					showfbk(failure.join());
 					chg_rcd=[];
 					locked=false;
 				}
 			}).fail(function(xhr, status, error) {
-				showinfo(svr_err.get(lang));
+				showfbk(svr_err.get(lang));
 				locked=false;
 			});
 		}
@@ -446,10 +450,11 @@ function escapeHtml (string) {
 	function displaymenu(e) {
 		if (!menue) {
 			$(e).show(100, 'linear');
-			menue= false;
+			console.log("in displaymenu");
+			menue= true;
 			menuh = setTimeout(function() {
 				let m = $(e);
-				menuNotExist = true;
+				menue= false;
 				m.hide();
 			}, 5 * 1000);
 		}
@@ -471,6 +476,7 @@ function escapeHtml (string) {
 			return null;
 		}
 		}
+		console.log(e.target.nodeName);
 		let x = e.clientX;
 		let y = e.clientY;
 		mn.css("left", x + 'px');
@@ -550,15 +556,6 @@ function escapeHtml (string) {
 			old_name = $(i).text();
 			$("#name").val(old_name);
 	}
-	// 检测name
-	function ck_name(){
-		if(!$("name").val()){$("errmsg").html(name_err.get(lang));}
-	}
-	// 检测url
-	function ck_url(){
-		let i=document.getElementById("url");
-		if(!valid_url($("name").val())||!i.reportValidity()){$("errmsg").html(url_err.get(lang));}
-	}
 	// 取消
 	function cnl(){
 		mod.style.display = "none";
@@ -627,18 +624,18 @@ function escapeHtml (string) {
 				 */
 				j=chg_rcd.length;
 				if(j){i=1;}else{i=0;}
-				while(j&&chr_rcd[j-1][0]!=id){
+				while(j&&chg_rcd[j-1][0]!=id){
 					j=j-1;
 				}
 				if(j>0){j=j-1};
-				if(i&&chr_rcd[j][0]!=id||chr_rcd[j][1]==3||chr_rcd[j][1]==6){
+				if(i&&chg_rcd[j][0]!=id||chg_rcd[j][1]==3||chg_rcd[j][1]==6){
 					chg_rcd.push([id,kind,new_name,new_url]);
 				}else{
 					if(new_name){
-						chr_rcd[j][2]=new_name;
+						chg_rcd[j][2]=new_name;
 					}
 					if(new_url){
-						chr_rcd[j][3]=new_url;
+						chg_rcd[j][3]=new_url;
 					}
 				}
 				chd = true;
@@ -664,7 +661,7 @@ function escapeHtml (string) {
 		let j=0,id=0,i=0,kind=3;
 		id=modi.parentElement.id;
 		if(id=='1'){
-				showinfo(svr_err.get(lang));
+				showfbk(svr_err.get(lang));
 				return;
 		}
 		if(modi.parentElement.nodeName=="UL"){kind=6;}
@@ -674,13 +671,13 @@ function escapeHtml (string) {
 		j=chg_rcd.length;
 		if(j>0){i=1;}
 		// 需要从后向前删除，保证操作的顺序
-		while(j&&chr_rcd[j-1][0]!=id){
+		while(j&&chg_rcd[j-1][0]!=id){
 			j=j-1;
 		}
 		if(j>0){j=j-1};
-		if(i&&chr_rcd[j][0]==id&&(chr_rcd[j][0]!=3||chr_rcd[j][0]!=6)){
-			chr_rcd[j][1]=kind;
-			chr_rcd[j].splice(2,3);
+		if(i&&chg_rcd[j][0]==id&&(chg_rcd[j][0]!=3||chg_rcd[j][0]!=6)){
+			chg_rcd[j][1]=kind;
+			chg_rcd[j].splice(2,3);
 		}else{
 			chg_rcd.push([id,kind]);
 		}
@@ -713,7 +710,7 @@ function escapeHtml (string) {
 			if(chd){
 				msg=msg+';'+saved_err.get(lang);
 			}
-			showinfo(msg);
+			showfbk(msg);
 			}
 	)}
 		
@@ -721,7 +718,7 @@ function escapeHtml (string) {
 	function rmv(){
 		if(!rm_notified){
 			rm_notified=true;
-			showinfo(rm_ntc.get(lang));
+			showfbk(rm_ntc.get(lang));
 			return;
 		}else{
 			$.ajax({
@@ -735,7 +732,7 @@ function escapeHtml (string) {
 				if(xhr.readyState==4&&(xhr.status==200||xhr.status==302)){
 				location.href='/index.html';}
 			}).fail(function(){
-				showinfo(svr_err.get(lang));
+				showfbk(svr_err.get(lang));
 				})
 		}	
 	}
@@ -788,16 +785,22 @@ function escapeHtml (string) {
 	</div>
 	<div id='mod'>
 		<div>
-		<label><span class='zh'>名称</span></label><span class='en'>name</span> <input onblur="ck_name()" id="name" type="text" value="" required="required">
+		<label><span class='zh'>名称</span></label><span class='en'>name</span> <input id="name" type="text" value="" required="required">
 		</div>
 		<div id="urlm">
-			<label><span class='zh'>网址</span><span class='en'>URL</span></label> <input onblur="ck_url()" id="url" type="url" value="" required="required">
+			<label><span class='zh'>网址</span><span class='en'>URL</span></label> <input id="url" type="url" value="" required="required">
 		</div>
 		<div id="errmsg" style="color: red"></div>
+		<div style="display:inline-block;">
 		<button id='cnlb' onclick="cnl()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
 		<button id='cnfm' onclick="hmod()"><span class='zh'>已完成</span><span class='en'>OK</span></button>
+		</div>
 	</div>
 	<div id='feedback'>
+	<div id='msgfbk'>
+	</div>
+	<button id='clsfbk' onclick="clsfbk()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
+	</div>
 	</div>
 
 	<div id="foldermenu">
