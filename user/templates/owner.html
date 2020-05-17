@@ -207,17 +207,20 @@ function escapeHtml (string) {
 		let uf=document.getElementById("upf");
 		uf.style.display='flex';
 		$("#clsf").hide();
+		$("#cnlupf").show();
+		$("#hupf").show();
 	}
 	
-	function cnlupf(){
+	function cnl_upf(){
 		$("#errmsgf").html('');
 		let uf=document.getElementById("upf");
 		uf.style.display='none';
 	}
-	function clsf(){cnlupf();}
+	function cls_f(){cnl_upf();}
 	
-	function hupf(){
+	function h_upf(){
 		let formData=new FormData($("#fm")[0]);
+		let ok=false;
 		$("#cnlupf").hide();
 		$("#hupf").hide();
 		$("#errmsgf").html(upf_ntc.get(lang));
@@ -254,11 +257,16 @@ function escapeHtml (string) {
 							addimg("#ifm li");
 							rm_a("#ifm li");
 							$("#shr").html(shr_base+src);
+							ok=true;
 						},
 						error:function(res){$("errmsgf").html(svr_err.get(lang));}
 					});
 				break;}
+			if(ok){
+				$("upf").hide();
+			}else{
 				$("#clsf").show();
+			}
 		  }).fail(function (res) {
 			$("#errmsgf").html(svr_err.get(lang));
 			$("#clsf").show();
@@ -779,8 +787,8 @@ function escapeHtml (string) {
 		<label><span class='zh'>文件地址</span></label><span class='en'>File Address</span> <input type="file" name='upfile' required="required">
 		<p id="errmsgf"></p>
 		<button id='cnlupf' onclick="cnlupf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
-		<button id='hupf' onclick="hupf()"><span class='zh'>上传</span><span class='en'>Upload</span></button>
-		<button id='clsf' onclick="clsf()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
+		<button id='hupf' onclick="h_upf()"><span class='zh'>上传</span><span class='en'>Upload</span></button>
+		<button id='clsf' onclick="cls_f()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
 		</form>
 	</div>
 	<div id='mod'>
