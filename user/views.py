@@ -49,10 +49,11 @@ dptn = re.compile(dpattren)
 gc_verify_container_tag = {'li', 'ul', 'h5'}
 gc_escape_char = re.compile("<|\"|>|'")
 # gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=#]+$")
-gc_img = re.compile(r"<img.+?>", re.DOTALL)
-gc_a_target = re.compile(r"target\s*?=.+?_blank\s*?\"|'", re.DOTALL | re.A | re.I)
+gc_img = re.compile(rb"<img.+?>", re.DOTALL)
+gc_a_target = re.compile(rb"target\s*?=.+?_blank\s*?\"|'", re.DOTALL | re.A | re.I)
 
-m = str.maketrans({'"':"&quot;", "'":"&#39;", '<':'&lt;', '>':'&gt;', '&':'&amp;'})
+# &符号不应出现两次转义前端已转义一次，后端不应再转义一次 &符本身作为转义字符的一个部分
+m = str.maketrans({'"':"&quot;", "'":"&#39;", '<':'&lt;', '>':'&gt;'})
 
 u = models.MyUser.objects
 r = os.remove
@@ -170,7 +171,14 @@ def  uname_m_fname(uname):
 def escape_char(cnt):
     return cnt.translate(m)
     
-
+def is_int(st):
+    try:
+        int(st)
+    except Exception:
+        return False
+    else:
+        return True
+    
 def verify_html(str_l):
     """
     验证输入的html是否准确
@@ -181,9 +189,17 @@ def verify_html(str_l):
     container = list()
     child_cnt = list()
     cur = list()
-    html = ht.fragments_fromstring(str_l[0])
+    if isinstance(str_l[0][0], bytes):
+        fragm=str_l[0].decode('utf-8')
+    else:
+        fragm=str_l[0]
+    # fragments_fromstring 无法使用bytes
+    html = ht.fragments_fromstring(fragm)
     if len(html) != 1:
         raise ValueError
+#     f=open("/media/data/编程/Project/webbookmark/backups/modify3",'wb')
+#     f.write(fragm)
+#     f.close()
     html = html[0]
     container.append(html)
     child_cnt.append(1)
@@ -196,41 +212,58 @@ def verify_html(str_l):
         if cnt >= idx:
             child = node[idx]
             if child.tag not in gc_verify_container_tag:
+                print("debug:209")
                 raise ValueError
             c_cnt = len(child)
             if c_cnt > 1:
                 if child.tag == 'ul':
                     attr = child_href.attrib
                     if (len(attr)>1 or not attr.has_key("id")
-                        or not isinstance(attr['id'], int)):
+                        or not is_int(attr['id'])):
+                        print("debug:217")
                         raise ValueError
                     container.append(child)
                     child_cnt.append(c_cnt - 1)
                     cur[-1] = idx + 1
                     cur.append(0)
                 else:
+                    print("debug:224")
                     raise ValueError
             else:
                 if child.tag == "h5":
                     if (child.attrib
                          or gc_escape_char.search(child.text)):
+                        print("debug:230")
                         raise ValueError
                     
                 elif child.tag == "li":
                     attr = child.attrib
                     child_href = child[0]
                     if (len(attr)>1 or not attr.has_key("id")
-                        or not isinstance(attr['id'], int) 
+                        or not is_int(attr['id']) 
                         or child_href.tag != 'a'):
+                        print("debug:239")
+                        print("debug:",str( isinstance(attr['id'], int)))
+                        print("debug:",str(attr))
                         raise ValueError
                     
                     attr = child_href.attrib
                     if (len(attr) != 1 or 
                         not attr.has_key("href") or 
-                        gc_escape_char.search(child_href.text) or 
-                        not URL_CHECK(attr["href"])):
+                        gc_escape_char.search(child_href.text)):
+                        print("debug:254")
+                        print("debug:",attr)
+                        print("debug:",child_href.text)
                         raise ValueError
+
+                    try:
+                        URL_CHECK(attr["href"])
+                    except Exception:
+                        print("debug:262")
+                        raise ValueError
+                        
                 else:
+                    print("debug:250")
                     raise ValueError
                 cur[-1] = idx + 1
         else:
@@ -249,12 +282,14 @@ def content_update(str_l, username):
         str_l.append(LEN_ERR)
         return False
     try:
+        print("debug:content_update")
         verify_html(str_l)
+#         print("debug:verify_html finished")
     except ValueError:
         str_l.append(FORMAT_ERR)
         return False
     fname = uname_m_fname(username) 
-    with gzip.open(MEDIA_ROOT + fname + ".gz", 'wt', 6, encoding='utf8') as f:
+    with gzip.open(MEDIA_ROOT + fname + ".gz", 'wb', 6) as f:
         f.write(str_l[0])
     str_l.append(fname)
     return True
@@ -381,12 +416,19 @@ def fupdate(req):
         div_e = content.find(b">")
         if div_e == -1:
             return HttpResponse(FORMAT_ERR, content_type='application/json')
-        content = content[div_e + 1:-7]
-    if content[:4] == b"<ul>":
+        content = content[div_e + 1:-6]
+#     print("debug:fupdate")
+#     f=open("/media/data/编程/Project/webbookmark/backups/modify1",'wb')
+#     f.write(content)
+#     f.close()
+    if content[:3] == b"<ul":
         # 删除img标签
         content = gc_img.sub(b'', content)
         # 删除a标签的target属性
         content = gc_a_target.sub(b'', content)
+        f=open("/media/data/编程/Project/webbookmark/backups/modify2",'wb')
+        f.write(content)
+        f.close()
         str_l = [content]
         if content_update(str_l, req.user.username):
             return HttpResponse('"' + str_l[1] + '"', content_type='application/json')
@@ -470,7 +512,7 @@ def piece_cupdate(req):
         if not (isinstance(i, list) 
                 and isinstance(i[0], int) and i[0] > 0
                 and isinstance(i[1], int) and 7 > i[1] > 0):
-           err_itm.append(str(f_count))
+           err_itm.append(i[0])
            continue
        
         kind = i[1]

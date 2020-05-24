@@ -257,6 +257,7 @@ function escapeHtml (string) {
 							rm_a("#ifm li");
 							$("#shr").html(shr_base+src);
 							ok=true;
+							$("upf").hide();
 							chg_rcd=[];
 							chd=false;
 							locked=false;
@@ -265,9 +266,7 @@ function escapeHtml (string) {
 						error:function(res){$("errmsgf").html(svr_err.get(lang));}
 					});
 				break;}
-			if(ok){
-				$("upf").hide();
-			}else{
+			if(!ok){
 				$("#clsf").show();
 			}
 		  }).fail(function (res) {
@@ -300,11 +299,11 @@ function escapeHtml (string) {
 	}
 
 	function sendtobackground() {
-		if(chd && chg_rcd.length>9||w_close){
+		if(chd && chg_rcd.length>=batch||w_close){
 			locked=true;
 			up= JSON.stringify(chg_rcd);
 			$.ajax({
-				url : 'http://127.0.0.1:8000/user/cu', 
+				url : 'http://127.0.0.1:8000/user/cup', 
 				type : 'post',
 				data :up,
 				cache : false,
@@ -313,17 +312,18 @@ function escapeHtml (string) {
 				datatype:"json",
 				async : true,
 			}).done(function(xhr, status, error){
-				let i=0,l_xhr=0,failure;
+				let i=0,l_xhr=0,failure,tag_name;
 				l_xhr=xhr.length;
 				if(l_xhr==0){return;}else{
 					failure.push("<table><tbody><tr><th><span class='en'>Name</span><span class='en'>名称</span></th><th>URL</th></tr>");
 					for(;i<l_xhr;i++){
 						if(xhr[i]){
 							let f=document.getElementById(xhr[i].toString());
-							let tag_name=$(f).find("h5").text();
 							if(f.nodeName=="UL"){
+								tag_name=$(f).find("h5").text();
 								failure.push("<tr><td>"+tag_name +"</td><td></td></tr>");
-							}else{
+							}else if(f.nodeName=="A"){
+								tag_name=$(f).find("a").text();
 								let href=$(f).find("a").attr("href");
 								failure.push("<tr><td>"+tag_name+"</td><td>"+href+"</td></tr>");
 							}
@@ -406,6 +406,8 @@ function escapeHtml (string) {
 		if(chd){
 			e.preventDefault();
 			e.returnValue = '修改未提交;moidfication is not saved';
+			w_close=true;
+			sendtobackground();
 			}
 	}
 	
@@ -489,7 +491,7 @@ function escapeHtml (string) {
 				return null;
 			}
 		}
-		console.log(e.target.nodeName);
+		// console.log(e.target.nodeName);
 		let x = e.clientX;
 		let y = e.clientY;
 		mn.css("left", x + 'px');
@@ -530,8 +532,7 @@ function escapeHtml (string) {
 		$(e).each(function(n,ee){
 		let src=$(ee).find("a").attr("href");
 		src=get_base(src);
-		 $(ee).prepend("<img src='" +src+ "favicon.ico'"+
-				 "onerror=\"imgerr(this);\"/>");
+		$(ee).prepend("<img src='" +src+ "favicon.ico'"+ "onerror=\"imgerr(this);\"/>");
 		})
 	}
 	
@@ -560,10 +561,10 @@ function escapeHtml (string) {
 		if (modi.tagName == "LI") {
 			i = $(modi).children("a")[0];
 			old_url = $(i).attr("href");
+			$("#urlm").show();
 			$("#url").val(old_url);
 		} else {
 			i = $(modi).children("h5")[0];
-			$("#urlm").hide();
 			old_url=new_url='';
 		}
 			old_name = $(i).text();
@@ -577,7 +578,6 @@ function escapeHtml (string) {
 	function hmod() {
 		let p_id=modi.id;
 		let id=0;
-		mod.style.display = "none";
 		new_name = $("#name").val();
 		if(!new_name){
 			$("#errmsg").text=name_err.get(lang);
@@ -599,19 +599,18 @@ function escapeHtml (string) {
 				id=get_avaliable_id();
 				used_id.splice(id[0],0,id[1]);
 				chg_rcd.push([id[1],1,new_name,new_url,p_id])
-				$(modi).append(
-						"<li id='"+id[1].toString()+"'"+" ><a href=\""+new_url+"\">" + new_name + "</a></li>");
+				$(modi).append("<li id='"+id[1].toString()+"'"+" ><a href=\""+new_url+"\">" + new_name + "</a></li>");
 				let l=$(modi).find("li:last");
 				addimg(l);
 				rm_a(l);
 			}
 				chd = true;
 		} else {
+			new_url = $("#url").val();
 			if (new_name != old_name || new_url != old_url) {
 				let i,j=0,id=0,kind=2;
 				id=p_id;
 				if(old_url){
-					new_url = $("#url").val();
 					if(!new_url||!valid_url(new_url)) {
 						$("#errmsg").text=url_err.get(lang);
 						return null;
@@ -653,6 +652,7 @@ function escapeHtml (string) {
 				chd = true;
 			}
 		}
+		mod.style.display = "none";
 		if(chd){sendtobackground();}
 	}
 	
@@ -673,8 +673,8 @@ function escapeHtml (string) {
 		let j=0,id=0,i=0,kind=3;
 		id=modi.id;
 		if(id=='1'){
-				showfbk(svr_err.get(lang));
-				return;
+			showfbk(svr_err.get(lang));
+			return;
 		}
 		if(modi.nodeName=="UL"){kind=6;}
 		/*
@@ -700,10 +700,14 @@ function escapeHtml (string) {
 			chg_rcd.push([id,kind]);
 		}
 		hidemenu();
-		// TODO  删除文件夹时，记录所有使用的ID
+		// 删除文件夹时，记录所有使用的ID
+		let id_arr=Array();
+		$(modi).find("li").each(function(){id_arr.push($(this).attr("id"));});
+		$(modi).find("ul").each(function(){id_arr.push($(this).attr("id"));});
+		// 从页面上删除
 		$(modi).remove();
 		// 删除使用的ID
-		remove_used_id(id);
+		remove_used_id(id_arr);
 		sendtobackground();
 	}
 	// 登出
@@ -723,7 +727,7 @@ function escapeHtml (string) {
 			async : true,
 		}).done(function(xhr, status, error) {
 			location.href='/index.html';
-	}).fail(function(){
+		}).fail(function(){
 			let msg=svr_err.get(lang);
 			if(chd){
 				msg=msg+';'+saved_err.get(lang);
@@ -794,9 +798,9 @@ function escapeHtml (string) {
 	<div id="ifm" ></div>
 	<div id="upf">
 		<form id="fm" onsubmit="return false;" enctype="multipart/form-data">
-		<label><span class='zh'>文件地址</span></label><span class='en'>File Address</span> <input type="file" name='upfile' required="required">
+		<label><span class='zh'>文件地址</span></label><span class='en'>File Address</span> <input type="file" name='upfile'> 
 		<p id="errmsgf"></p>
-		<button id='cnlupf' onclick="cnlupf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
+		<button id='cnlupf' onclick="cnl_upf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
 		<button id='hupf' onclick="h_upf()"><span class='zh'>上传</span><span class='en'>Upload</span></button>
 		<button id='clsf' onclick="cls_f()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
 		</form>
@@ -818,7 +822,6 @@ function escapeHtml (string) {
 	<div id='msgfbk'>
 	</div>
 	<button id='clsfbk' onclick="cls_fbk()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
-	</div>
 	</div>
 
 	<div id="foldermenu">
