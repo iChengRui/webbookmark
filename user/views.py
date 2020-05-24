@@ -478,7 +478,7 @@ def find_str(array:list, s:str, start=0, start_s=0):
     
     idx_s = array[start].find(s, start_s)
     if idx_s != -1:
-        return (idx + start, idx_s)
+        return (start, idx_s)
     
     idx += 1
     for j in array[start + 1:]:
@@ -559,7 +559,7 @@ def piece_cupdate(req):
             
         elif kind == 2:
             # 2.修改链接
-            s = "id=\"" + str(i[4]) + '"'
+            s = "id=\"" + str(i[0]) + '"'
             idx, idx_s = find_str(old_c, s)
             
             if idx == -1:
@@ -568,17 +568,17 @@ def piece_cupdate(req):
             
             pieces = list()
             itm = old_c[idx]
-            idx_e = itm.find("</li>")
+            idx_e = itm.find("</li>",idx_s)
             itm0, itm1 = itm[:idx_e + 5], itm[idx_e + 5:]
             idx_href = 0
-            # 修改链接名称
+            # 修改链接
             if i[3]:
                 try:
                     URL_CHECK(i[3])
                 except Exception:
                     err_itm.append(i[0]) 
                     continue
-                idx_href = itm0.find("href=\"", idx)
+                idx_href = itm0.find("href=\"", idx_s)
                 pieces.extend([item0[:idx_href + 5], i[3], "\">"])
             else:
                 pieces.append(item0)   
@@ -622,12 +622,11 @@ def piece_cupdate(req):
             old_c[idx:idx] = (itm0, itm1)
         elif kind == 5:
             # 5.修改文件夹
-            if gc_escape_char.search(i[2]) or len(i) < 5:
+            if gc_escape_char.search(i[2]) or len(i) < 3:
                 err_itm.append(i[0]) 
                 continue
             
-            s = "id=\"" + str(i[4]) + '"'
-            idx, idx_s = find_str(old_c, s)
+            s = "id=\"" + str(i[0]) + '"' idx, idx_s = find_str(old_c, s)
             
             # TODO 内部格式错误
             if idx == -1:
@@ -657,16 +656,18 @@ def piece_cupdate(req):
             # <ul id=
             header_s = old_c[header].find("<ul" ,
                 max(header_s - 5, 0), header_s)
-            deepth = 0
             # TODO内部格式错误
             if header_s == -1:
                 err_itm.append(i[0]) 
                 continue
             itm0, itm1 = old_c[header][:header_s], old_c[header][header_s:]
+            del old_c[header]
             old_c[header:header] = itm0, itm1
+
             header += 1
             tail = header
             tail_s = 0
+            deepth = 0
             finished = False
             for i in old_c[header:]:
                 for j in dptn.finditer(i):
@@ -683,6 +684,8 @@ def piece_cupdate(req):
                 tail += 1
             # </ul> 长度为4 
             itm0, itm1 = old_c[tail][:tail_s + 5], old_c[tail][tail_s + 5:]
+            del old_c[tail]
+            old_c[header:header] = itm0, itm1
             old_c[tail:tail] = itm0, itm1
             del old_c[header:tail + 1]
     with gzip.open(fname, 'wt', 6, encoding='utf8') as f:
