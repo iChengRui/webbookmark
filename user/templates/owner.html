@@ -4,6 +4,7 @@
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <title>webbookmark-owner</title>
 <style type="text/css">
+a{ text-decoration:none}
 img {
 	display:inline;
 	height:1em;
@@ -156,6 +157,12 @@ function escapeHtml (string) {
 	const shr_url_err=new Map([['zh','书签正在上传或地址错误，无法分享'],['en','Bookmark is uploading or with wrong address, can not be shared.']]);
 	//const url_err=new Map([['zh',''],['en','']]);
 	
+	
+	function sortNumber(a,b) 
+	{ 
+	return a - b 
+	} 
+	
 	/*
 	 * 移除未使用的ID
 	 */
@@ -175,13 +182,13 @@ function escapeHtml (string) {
 		let ul_e=document.getElementsByTagName("ul");
 		let li_e=document.getElementsByTagName("li");
 		
-		for(let e in ul_e){
-			all_id.push(e.id);			
+		for(let e of ul_e){
+			all_id.push(parseInt(e.id));			
 		}
-		for(let e in li_e){
-			all_id.push(e.id);			
+		for(let e of li_e){
+			all_id.push(parseInt(e.id));			
 		}
-		all_id.sort();
+		all_id.sort(sortNumber);
 		return all_id; 
 	}
 	
@@ -363,6 +370,8 @@ function escapeHtml (string) {
 			addimg("#ifm li");
 			rm_a("#ifm li");
 			$("#shr").html(shr_base+src);
+			// 记录已使用的id
+			used_id=get_used_id();
 			}else if(xmlhttp.status==304){
 				$("#shr").html(shr_base+src);
 			} else{
@@ -465,8 +474,6 @@ function escapeHtml (string) {
 		$("#shrinfo").hide();
 		$("span.shroff").show();
 		$("span.shron").hide();
-		// 记录已使用的id
-		used_id=get_used_id();
 	}
 	
 	// 菜单处理
