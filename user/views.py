@@ -491,6 +491,7 @@ def find_str(array:list, s:str, start=0, start_s=0):
 
 @login_required
 def piece_cupdate(req):
+    username = req.user.username
     try:
         c = loads(req.body)
     except Exception:
@@ -509,7 +510,7 @@ def piece_cupdate(req):
 
     for i in c:
         f_count += 1
-        if not (isinstance(i, list) 
+        if not (isinstance(i, list) and len(i)>1 
                 and isinstance(i[0], int) and i[0] > 0
                 and isinstance(i[1], int) and 7 > i[1] > 0):
            err_itm.append(i[0])
@@ -518,8 +519,8 @@ def piece_cupdate(req):
         kind = i[1]
         if kind == 1 or kind == 4:
             # 1.新增链接 4.新增文件夹
-            if gc_escape_char.search(i[2]) or len(i) < 5 \
-                or not isinstance(i[4], int) or i[4] <= 0:
+            if (gc_escape_char.search(i[2]) or len(i) < 5 
+                or not isinstance(i[4], int) or i[4] <= 0):
                 err_itm.append(i[0]) 
                 continue
             
@@ -559,6 +560,10 @@ def piece_cupdate(req):
             
         elif kind == 2:
             # 2.修改链接
+            if len(i)<3:
+                err_itm.append(i[0]) 
+                continue
+                
             s = "id=\"" + str(i[0]) + '"'
             idx, idx_s = find_str(old_c, s)
             
@@ -580,17 +585,16 @@ def piece_cupdate(req):
                     continue
                 idx_href = itm0.find("href=\"", idx_s)
                 pieces.extend([item0[:idx_href + 5], i[3], "\">"])
-            else:
-                pieces.append(item0)   
             # 修改文件名
             if i[2]:
-                if gc_escape_char.search(i[2]) or len(i) < 5:
+                if gc_escape_char.search(i[2]):
                     err_itm.append(i[0]) 
                     continue
                 if idx_href:
                     pieces.extend([i[2], '</a></li>'])
                 else:
-                    idx_label = itm0[:-6].rfind('>', idx)
+                    # -9 </a></li> 的长度
+                    idx_label = itm0[:-9].rfind('>', idx_s)
                     # TODO 内部格式错误
                     if idx_label == -1:
                         err_itm.append(i[0]) 
@@ -626,7 +630,8 @@ def piece_cupdate(req):
                 err_itm.append(i[0]) 
                 continue
             
-            s = "id=\"" + str(i[0]) + '"' idx, idx_s = find_str(old_c, s)
+            s = "id=\"" + str(i[0]) + '"'
+            idx, idx_s = find_str(old_c, s)
             
             # TODO 内部格式错误
             if idx == -1:
@@ -685,9 +690,9 @@ def piece_cupdate(req):
             # </ul> 长度为4 
             itm0, itm1 = old_c[tail][:tail_s + 5], old_c[tail][tail_s + 5:]
             del old_c[tail]
-            old_c[header:header] = itm0, itm1
             old_c[tail:tail] = itm0, itm1
             del old_c[header:tail + 1]
+            
     with gzip.open(fname, 'wt', 6, encoding='utf8') as f:
            f.write("".join(old_c)) 
     return HttpResponse(dumps(err_itm), content_type='application/json')

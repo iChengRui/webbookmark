@@ -131,7 +131,9 @@ function escapeHtml (string) {
 	locked=false, // 是否正在上传
 	used_id=[], // 已使用的id
 	w_close=false, // 等待关闭
+	force_sendback=false, // 强制传输到后台
 	chg_rcd=[]; // 记录变化的内容
+	
 	xmlhttp=new XMLHttpRequest();
 	
 	const batch=10;
@@ -204,6 +206,7 @@ function escapeHtml (string) {
 	}
 
 	function UploadFile(){
+		if(locked){return null;}
 		let uf=document.getElementById("upf");
 		uf.style.display='flex';
 		$("#clsf").hide();
@@ -299,9 +302,10 @@ function escapeHtml (string) {
 	}
 
 	function sendtobackground() {
-		if(chd && chg_rcd.length>=batch||w_close){
+		if(chd && chg_rcd.length>=batch||w_close||force_sendback){
 			locked=true;
 			up= JSON.stringify(chg_rcd);
+			$("upf_btn").css({'background':'red'});
 			$.ajax({
 				url : 'http://127.0.0.1:8000/user/cup', 
 				type : 'post',
@@ -334,14 +338,20 @@ function escapeHtml (string) {
 					showfbk(failure.join());
 					chg_rcd=[];
 				}
+				$("upf_btn").css({'background':'#E0E0E0'});
 			}).fail(function(xhr, status, error) {
 				showfbk(svr_err.get(lang));
 			});
 		locked=false;
 		chd=false;
+		force_sendback=false;
 		}
 	}
 	
+	function force_sndbk(){
+		force_sendback=true;
+		sendtobackground();
+	}
 	function rm_a(ele){
 		$(ele).attr({target:"_blank"});
 	}
@@ -775,8 +785,8 @@ function escapeHtml (string) {
 			<button id="zh">中文</button>
 	</div>
 	<div id="ctr">
-	<button onclick="sendtobackground();"><span class='zh'>同步至服务器</span><span class='en'>Sync to Server</span></button>
-	<button onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>Upload File</span></button>
+	<button onclick="force_sndbk();"><span class='zh'>同步至服务器</span><span class='en'>Sync to Server</span></button>
+	<button id='upf_btn' onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>Upload File</span></button>
 	<button onclick="logout();"><span class='zh'>退出</span><span class='en'>Log Out</span></button>
 	<button onclick="hlp();"><span class='zh'>帮助</span><span class='en'>Help</span></button>
 	<button onclick="shrtgl();"><span class='zh'><span class='shroff'>显示</span><span class='shron'>隐藏</span>分享链接</span><span class='en'><span class='shroff'>Display</span><span class='shron'>Hide</span> share URL</span></button>
