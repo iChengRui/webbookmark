@@ -138,7 +138,7 @@ function escapeHtml (string) {
 	xmlhttp=new XMLHttpRequest();
 	
 	const batch=10;
-	const shr_base="http:127.0.0.1/vistor?";
+	const shr_base="http:127.0.0.1/visitor?";
 	const up_max=65536; //最多字符数 2**16
 	const up_len_err=new Map([['zh','最多允许65536个字符(2^16),请删除不必要的书签或使用简短的名称，如有其他事情，可先保存至本地'],
 		['en','at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.']]);
@@ -168,11 +168,14 @@ function escapeHtml (string) {
 	 */
 	function remove_used_id(rm_id){
 		let idx=0;
+		console.log(rm_id);
 		let rm=new Array();
 		if(typeof rm_id =="number"){rm.push(rm_id);}else{rm=rm_id;}
-		for(let i in rm){
+		rm.sort(sortNumber);
+		for(let i of rm){
 			idx=used_id.indexOf(i,idx);
-			if(idx!=-1){usd_id.splice(idx,1);}
+			console.log(i,idx);
+			if(idx!=-1){used_id.splice(idx,1);}else{idx=0;}
 		}
 	} 
 	
@@ -209,7 +212,7 @@ function escapeHtml (string) {
 		}else{
 			return [0,1];
 		}
-		return [u_id_l,used_id[u_id_l-1]+1];
+		return [u_id_l+1,used_id[u_id_l]+1];
 	}
 
 	function UploadFile(){
@@ -314,7 +317,7 @@ function escapeHtml (string) {
 			up= JSON.stringify(chg_rcd);
 			$("upf_btn").css({'background':'red'});
 			$.ajax({
-				url : 'http://127.0.0.1:8000/user/cup', 
+				url : 'http://127.0.0.1:8000/user/pup', 
 				type : 'post',
 				data :up,
 				cache : false,
@@ -453,7 +456,7 @@ function escapeHtml (string) {
 			location.href='index.html';
 			return;
 			}
-		$("#mod input").each(function(i,e){$(e).focus(function(){$("#errmsg").text=""})})
+		$("#mod input").each(function(i,e){$(e).on('input',function(){$("#errmsg").html("");});})
 		mod = document.getElementById("mod");
 		
 		ifm=document.getElementById("ifm");
@@ -480,7 +483,6 @@ function escapeHtml (string) {
 	function displaymenu(e) {
 		if (!menue) {
 			$(e).show(100, 'linear');
-			console.log("in displaymenu");
 			menue= true;
 			menuh = setTimeout(function() {
 				let m = $(e);
@@ -582,10 +584,12 @@ function escapeHtml (string) {
 			$("#url").val(old_url);
 		} else {
 			i = $(modi).children("h5")[0];
+			$("#urlm").hide();
 			old_url=new_url='';
 		}
-			old_name = $(i).text();
-			$("#name").val(old_name);
+		old_name = $(i).text();
+		$("#name").val(old_name);
+		$("#errmsg").html("");
 	}
 	// 取消
 	function cnl(){
@@ -593,11 +597,11 @@ function escapeHtml (string) {
 	}
 	// 完成
 	function hmod() {
-		let p_id=modi.id;
+		let p_id=parseInt(modi.id);
 		let id=0;
 		new_name = $("#name").val();
 		if(!new_name){
-			$("#errmsg").text=name_err.get(lang);
+			$("#errmsg").html(name_err.get(lang));
 			return null;
 		}
 		new_name=escapeHtml(new_name);
@@ -610,7 +614,7 @@ function escapeHtml (string) {
 			} else {
 				new_url = $("#url").val();
 				if(!new_url||!valid_url(new_url)) {
-					$("#errmsg").text=url_err.get(lang);
+					$("#errmsg").html(url_err.get(lang));
 					return null;
 				}
 				id=get_avaliable_id();
@@ -629,7 +633,7 @@ function escapeHtml (string) {
 				id=p_id;
 				if(old_url){
 					if(!new_url||!valid_url(new_url)) {
-						$("#errmsg").text=url_err.get(lang);
+						$("#errmsg").html(url_err.get(lang));
 						return null;
 					}
 					i = $(modi).children("a")[0];
@@ -687,13 +691,21 @@ function escapeHtml (string) {
 	}
 	// 删除文件夹或子书签
 	function del(event) {
-		let j=0,id=0,i=0,kind=3;
-		id=modi.id;
+		// 删除文件夹时，记录所有使用的ID
+		let j=0,id=0,i=0,kind=3,id_arr=Array();
+
+		id=parseInt(modi.id);
+
 		if(id=='1'){
 			showfbk(svr_err.get(lang));
 			return;
 		}
-		if(modi.nodeName=="UL"){kind=6;}
+		id_arr.push(id);	
+		if(modi.nodeName=="UL"){
+			kind=6;
+			$(modi).find("li").each(function(){id_arr.push(parseInt($(this).attr("id")));});
+			$(modi).find("ul").each(function(){id_arr.push(parseInt($(this).attr("id")));});
+		}
 		/*
 		 * 检查是否已存在
 		 */
@@ -717,10 +729,6 @@ function escapeHtml (string) {
 			chg_rcd.push([id,kind]);
 		}
 		hidemenu();
-		// 删除文件夹时，记录所有使用的ID
-		let id_arr=Array();
-		$(modi).find("li").each(function(){id_arr.push($(this).attr("id"));});
-		$(modi).find("ul").each(function(){id_arr.push($(this).attr("id"));});
 		// 从页面上删除
 		$(modi).remove();
 		// 删除使用的ID
