@@ -607,9 +607,9 @@ def piece_cupdate(req):
             old_c[idx:idx] = pieces
         elif kind == 3:
             # 3.删除链接
-            s = "id=\"" + str(i[4]) + '"'
+            s = "id=\"" + str(i[0]) + '"'
             idx, idx_s = find_str(old_c, s)
-            
+            print("idx",idx,'idx_s',idx_s,'s',s)
             if idx == -1:
                 err_itm.append(i[0]) 
                 continue
@@ -624,6 +624,8 @@ def piece_cupdate(req):
             itm0, itm1 = itm[:itm0], itm[itm1 + 5:]
             del old_c[idx]
             old_c[idx:idx] = (itm0, itm1)
+            print("in kind:3")
+            print(old_c[idx])
         elif kind == 5:
             # 5.修改文件夹
             if gc_escape_char.search(i[2]) or len(i) < 3:
@@ -694,6 +696,7 @@ def piece_cupdate(req):
             del old_c[header:tail + 1]
             
     with gzip.open(fname, 'wt', 6, encoding='utf8') as f:
+           print(old_c)
            f.write("".join(old_c)) 
     return HttpResponse(dumps(err_itm), content_type='application/json')
 
