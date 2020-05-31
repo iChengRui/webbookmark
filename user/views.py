@@ -488,12 +488,12 @@ def find_str(array:list, s:str, start=0, start_s=0):
         idx += 1
     return(-1, -1)
 
-
 @login_required
 def piece_cupdate(req):
     username = req.user.username
     try:
         c = loads(req.body)
+        print(c)
     except Exception:
         return HttpResponse(FORMAT_ERR, content_type='application/json')
         
