@@ -213,7 +213,7 @@ def verify_html(str_l):
         if cnt >= idx:
             child = node[idx]
             if child.tag not in gc_verify_container_tag:
-                print("debug:209")
+                # print("debug:209")
                 raise ValueError
             c_cnt = len(child)
             if c_cnt > 1:
@@ -221,20 +221,20 @@ def verify_html(str_l):
                     attr = child_href.attrib
                     if (len(attr)>1 or not attr.has_key("id")
                         or not is_int(attr['id'])):
-                        print("debug:217")
+                        # print("debug:217")
                         raise ValueError
                     container.append(child)
                     child_cnt.append(c_cnt - 1)
                     cur[-1] = idx + 1
                     cur.append(0)
                 else:
-                    print("debug:224")
+                    # print("debug:224")
                     raise ValueError
             else:
                 if child.tag == "h5":
                     if (child.attrib
                          or gc_escape_char.search(child.text)):
-                        print("debug:230")
+                        # print("debug:230")
                         raise ValueError
                     
                 elif child.tag == "li":
@@ -243,28 +243,28 @@ def verify_html(str_l):
                     if (len(attr)>1 or not attr.has_key("id")
                         or not is_int(attr['id']) 
                         or child_href.tag != 'a'):
-                        print("debug:239")
-                        print("debug:",str( isinstance(attr['id'], int)))
-                        print("debug:",str(attr))
+                        # print("debug:239")
+                        # print("debug:",str( isinstance(attr['id'], int)))
+                        # print("debug:",str(attr))
                         raise ValueError
                     
                     attr = child_href.attrib
                     if (len(attr) != 1 or 
                         not attr.has_key("href") or 
                         gc_escape_char.search(child_href.text)):
-                        print("debug:254")
-                        print("debug:",attr)
-                        print("debug:",child_href.text)
+                        # print("debug:254")
+                        # print("debug:",attr)
+                        # print("debug:",child_href.text)
                         raise ValueError
 
                     try:
                         URL_CHECK(attr["href"])
                     except Exception:
-                        print("debug:262")
+                        # print("debug:262")
                         raise ValueError
                         
                 else:
-                    print("debug:250")
+                    # print("debug:250")
                     raise ValueError
                 cur[-1] = idx + 1
         else:
@@ -558,12 +558,12 @@ def piece_cupdate(req):
                 itm1=old_c[idx][idx_s + 5:]
                 del old_c[idx]       
                 old_c[idx:idx] = itm0, new_itm, itm1
-                print("itm0:",itm0)
-                print("itm1:",itm1)
+                # print("itm0:",itm0)
+                # print("itm1:",itm1)
             else:
                 idx += 1
                 old_c[idx:idx] = new_itm
-            
+            # print(old_c)
         elif kind == 2:
             # 2.修改链接
             if len(i)<3:
@@ -620,14 +620,14 @@ def piece_cupdate(req):
                         continue
                     pieces.append(p[idx_label+1:])
                 
-            print("pieces:",pieces)
+            # print("pieces:",pieces)
             del old_c[idx]
             old_c[idx:idx]=itm0,"".join(pieces),itm1
         elif kind == 3:
             # 3.删除链接
             s = "id=\"" + str(i[0]) + '"'
             idx, idx_s = find_str(old_c, s)
-            print("idx",idx,'idx_s',idx_s,'s',s)
+            # print("idx",idx,'idx_s',idx_s,'s',s)
             if idx == -1:
                 err_itm.append(i[0]) 
                 continue
@@ -642,8 +642,8 @@ def piece_cupdate(req):
             itm0, itm1 = itm[:itm0], itm[itm1 + 5:]
             del old_c[idx]
             old_c[idx:idx] = (itm0, itm1)
-            print("in kind:3")
-            print(old_c[idx])
+            # print("in kind:3")
+            # print(old_c[idx])
         elif kind == 5:
             # 5.修改文件夹
             if gc_escape_char.search(i[2]) or len(i) < 3:
@@ -687,7 +687,7 @@ def piece_cupdate(req):
             itm0, itm1 = old_c[header][:header_s], old_c[header][header_s:]
             del old_c[header]
             old_c[header:header] = itm0, itm1
-            print("itm0:",itm0)
+            # print("itm0:",itm0)
             header += 1
             tail = header
             tail_s = 0
