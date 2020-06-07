@@ -51,6 +51,7 @@ gc_escape_char = re.compile("<|\"|>|'")
 # gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=#]+$")
 gc_img = re.compile(rb"<img.+?>", re.DOTALL)
 gc_a_target = re.compile(rb"target\s*?=.+?_blank\s*?\"|'", re.DOTALL | re.A | re.I)
+gc_style=re.compile(rb' style="display: none;"', re.DOTALL | re.A | re.I)
 
 # &符号不应出现两次转义前端已转义一次，后端不应再转义一次 &符本身作为转义字符的一个部分
 m = str.maketrans({'"':"&quot;", "'":"&#39;", '<':'&lt;', '>':'&gt;'})
@@ -426,6 +427,9 @@ def fupdate(req):
         content = gc_img.sub(b'', content)
         # 删除a标签的target属性
         content = gc_a_target.sub(b'', content)
+        # 删除隐藏所使用的style字符
+        content = gc_style.sub(b'', content)
+        
         f=open("/media/data/编程/Project/webbookmark/backups/modify2",'wb')
         f.write(content)
         f.close()
@@ -550,10 +554,12 @@ def piece_cupdate(req):
                 continue
             
             if old_c[idx][-5:] != "</h5>":
-                itm0= old_c[idx][:idx_s + 6]
-                itm1=old_c[idx][idx_s + 6:]
+                itm0= old_c[idx][:idx_s + 5]
+                itm1=old_c[idx][idx_s + 5:]
                 del old_c[idx]       
                 old_c[idx:idx] = itm0, new_itm, itm1
+                print("itm0:",itm0)
+                print("itm1:",itm1)
             else:
                 idx += 1
                 old_c[idx:idx] = new_itm
@@ -573,8 +579,12 @@ def piece_cupdate(req):
             
             pieces = list()
             itm = old_c[idx]
+            # print(itm)
             idx_e = itm.find("</li>",idx_s)
-            itm0, itm1 = itm[:idx_e + 5], itm[idx_e + 5:]
+            idx_s=itm.rfind("<li",0,idx_s)
+            # print("idx_e ",idx_e,"idx_s",idx_s)
+            itm0, p,itm1 =itm[:idx_s], itm[idx_s:idx_e + 5], itm[idx_e + 5:]
+            # print("p:",p)
             idx_href = 0
             # 修改链接
             if i[3]:
@@ -583,8 +593,8 @@ def piece_cupdate(req):
                 except Exception:
                     err_itm.append(i[0]) 
                     continue
-                idx_href = itm0.find("href=\"", idx_s)
-                pieces.extend([item0[:idx_href + 5], i[3], "\">"])
+                idx_href = p.find("href")
+                pieces.extend([p[:idx_href + 4],'="', i[3], "\">"])
             # 修改文件名
             if i[2]:
                 if gc_escape_char.search(i[2]):
@@ -594,17 +604,25 @@ def piece_cupdate(req):
                     pieces.extend([i[2], '</a></li>'])
                 else:
                     # -9 </a></li> 的长度
-                    idx_label = itm0[:-9].rfind('>', idx_s)
+                    idx_label = p[:-9].rfind('>')
                     # TODO 内部格式错误
                     if idx_label == -1:
                         err_itm.append(i[0]) 
                         continue
-                    pieces.extend([itm0[:idx_label + 1], i[2],
+                    pieces.extend([p[:idx_label + 1], i[2],
                         '</a></li>'])
-            
-            pieces.append(itm1)
+            else:
+                    # -9 </a></li> 的长度
+                    idx_label = p[:-9].rfind('>')
+                    # TODO 内部格式错误
+                    if idx_label == -1:
+                        err_itm.append(i[0]) 
+                        continue
+                    pieces.append(p[idx_label+1:])
+                
+            print("pieces:",pieces)
             del old_c[idx]
-            old_c[idx:idx] = pieces
+            old_c[idx:idx]=itm0,"".join(pieces),itm1
         elif kind == 3:
             # 3.删除链接
             s = "id=\"" + str(i[0]) + '"'
@@ -614,7 +632,7 @@ def piece_cupdate(req):
                 err_itm.append(i[0]) 
                 continue
             itm = old_c[idx]
-            itm0 = itm.rfind('<li', idx_s - 5, idx_s)
+            itm0 = itm.rfind('<li', 0, idx_s)
             itm1 = itm.find('</li>', idx_s)
             # TODO 内部格式错误
             if itm0 == -1 or itm1 == -1:
@@ -661,8 +679,7 @@ def piece_cupdate(req):
                 continue
             
             # <ul id=
-            header_s = old_c[header].find("<ul" ,
-                max(header_s - 5, 0), header_s)
+            header_s = old_c[header].rfind("<ul" ,0, header_s)
             # TODO内部格式错误
             if header_s == -1:
                 err_itm.append(i[0]) 
@@ -670,7 +687,7 @@ def piece_cupdate(req):
             itm0, itm1 = old_c[header][:header_s], old_c[header][header_s:]
             del old_c[header]
             old_c[header:header] = itm0, itm1
-
+            print("itm0:",itm0)
             header += 1
             tail = header
             tail_s = 0
@@ -696,7 +713,7 @@ def piece_cupdate(req):
             del old_c[header:tail + 1]
             
     with gzip.open(fname, 'wt', 6, encoding='utf8') as f:
-           print(old_c)
+           # print(old_c)
            f.write("".join(old_c)) 
     return HttpResponse(dumps(err_itm), content_type='application/json')
 

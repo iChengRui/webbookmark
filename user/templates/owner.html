@@ -139,7 +139,7 @@ function escapeHtml (string) {
 	
 	var xx;// 调试使用
 	const batch=10;
-	const shr_base="http:127.0.0.1/visitor?";
+	const shr_base="http://127.0.0.1/visitor.html?";
 	const up_max=65536; //最多字符数 2**16
 	const up_len_err=new Map([['zh','最多允许65536个字符(2^16),请删除不必要的书签或使用简短的名称，如有其他事情，可先保存至本地'],
 		['en','at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.']]);
@@ -157,9 +157,9 @@ function escapeHtml (string) {
 	const root_err=new Map([['zh','可以修改根目录名称，但无法删除'],['en','For root directory,name can be modified but can\'t be deleted.']])
 	const shr_url_err=new Map([['zh','书签正在上传或地址错误，无法分享'],['en','Bookmark is uploading or with wrong address, can not be shared.']]);
 	const itmf_err=new Map([['zh','下列内容更新失败：'],['en','The following items fail to update:']]);
-	var action_err=new Map([['zh',''],['en','']]);
-	action_err['zh']=new Map([[1,'新增链接'],[2,'修改链接'],[3,'删除链接'],[4,'新增文件夹'],[5,'修改文件夹'],[6,'删除文件夹']]);
-	action_err['en']=new Map([[1,'add link'],[2,'modify link'],[3,'delete link'],[4,'add folder'],[5,'modify folder'],[6,'delete folder']]);
+	var action_err=new Map();
+	action_err.set('zh',new Map([[1,'新增链接'],[2,'修改链接'],[3,'删除链接'],[4,'新增文件夹'],[5,'修改文件夹'],[6,'删除文件夹']]));
+	action_err.set('en',new Map([[1,'add link'],[2,'modify link'],[3,'delete link'],[4,'add folder'],[5,'modify folder'],[6,'delete folder']]));
 	//const url_err=new Map([['zh',''],['en','']]);
 	
 	
@@ -345,7 +345,7 @@ function escapeHtml (string) {
 					failure.push("<p>");
 					failure.push(svr_err.get(lang)+itmf_err.get(lang));
 					failure.push("</p>");
-					failure.push("<table><tbody><tr><th><span class='en'>Name</span><span class='zh'>名称</span></th><th><span class='en'>action</span><span class='zh'>操作</span><</th><th>URL</th></tr>");
+					failure.push('<table><tbody><tr><th><span class="en">Name</span><span class="zh">名称</span></th><th><span class="en">action</span><span class="zh">操作</span><</th><th>URL</th></tr>');
 					for(;i<l_xhr;i++){
 						j=-1;
 						if(xhr[i]){
@@ -362,7 +362,7 @@ function escapeHtml (string) {
 									}else{
 										tag_name=chg_rcd[j][2];
 									}
-									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err[lang][chg_rcd[j][1]]+"</td><td></td></tr>");
+									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(lang).get(chg_rcd[j][1])+"</td><td></td></tr>");
 								}else {
 									if(chg_rcd[j][1]==3){
 										tag_name='id'+chg_rcd[j][0];
@@ -373,7 +373,7 @@ function escapeHtml (string) {
 									if(chg_rcd[j].length>3){
 										href=chg_rcd[j][3];
 									}
-									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err[lang][chg_rcd[j][1]]+"</td><td>"+href+"</td></tr>");
+									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(lang).get(chg_rcd[j][1])+"</td><td>"+href+"</td></tr>");
 								}
 							}
 							// TODO wait for decision delete or not.
@@ -621,6 +621,7 @@ function escapeHtml (string) {
 		} else {
 			i = $(modi).children("h5")[0];
 			$("#urlm").hide();
+			$("#url").val('');
 			old_url=new_url='';
 		}
 		old_name = $(i).text();
@@ -731,8 +732,7 @@ function escapeHtml (string) {
 		let j=0,id=0,i=0,kind=3,id_arr=Array();
 
 		id=parseInt(modi.id);
-
-		if(id=='1'){
+		if(id==1){
 			showfbk(svr_err.get(lang));
 			return;
 		}
@@ -793,7 +793,7 @@ function escapeHtml (string) {
 	// 登出
 	function logout(){
 		if(chd){
-			sendbacktoground();
+			sendtobackround();
 			if(chd){
 				return;
 			}
