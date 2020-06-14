@@ -519,9 +519,11 @@ def piece_cupdate(req):
                 and isinstance(i[1], int) and 7 > i[1] > 0):
            err_itm.append(i[0])
            continue
-       
+
         kind = i[1]
         if kind == 1 or kind == 4:
+            print(i)
+            print(old_c)
             # 1.新增链接 4.新增文件夹
             if (gc_escape_char.search(i[2]) or len(i) < 5 
                 or not isinstance(i[4], int) or i[4] <= 0):
@@ -565,6 +567,8 @@ def piece_cupdate(req):
                 old_c[idx:idx] = new_itm
             # print(old_c)
         elif kind == 2:
+            print(i)
+            print(old_c)
             # 2.修改链接
             if len(i)<3:
                 err_itm.append(i[0]) 
@@ -624,6 +628,8 @@ def piece_cupdate(req):
             del old_c[idx]
             old_c[idx:idx]=itm0,"".join(pieces),itm1
         elif kind == 3:
+            print(i)
+            print(old_c)
             # 3.删除链接
             s = "id=\"" + str(i[0]) + '"'
             idx, idx_s = find_str(old_c, s)
@@ -645,6 +651,8 @@ def piece_cupdate(req):
             # print("in kind:3")
             # print(old_c[idx])
         elif kind == 5:
+            print(i)
+            print(old_c)
             # 5.修改文件夹
             if gc_escape_char.search(i[2]) or len(i) < 3:
                 err_itm.append(i[0]) 
@@ -671,6 +679,8 @@ def piece_cupdate(req):
             old_c[idx:idx] = itm0, new_itm, itm1
             
         elif kind == 6:
+            print(i)
+            print(old_c)
             # 6.删除文件夹
             s = "id=\"" + str(i[0]) + '"'
             header, header_s = find_str(old_c, s)

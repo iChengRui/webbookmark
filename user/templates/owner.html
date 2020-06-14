@@ -50,9 +50,21 @@ h5{margin:0; padding:0;}
 li,ul{list-style:none;}
 button{border-radius: 50%}
 #cntn{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:space-between;}
+#msgfbk{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:center;}
 #shrinfo {background-color: lightcyan;margin: 0;}
 #ifm{ width:100%;}
 #locknotice{max-width:24em;}
+
+table{
+	 border-style: solid none;
+	 border-width: 2px;
+	 border-collapse: collapse;
+	}
+	td {
+	  border-width: 1px;
+	  border-style: solid none;
+	  text-align:center;
+	}
 </style>
 
 <!--  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -173,13 +185,11 @@ function escapeHtml (string) {
 	 */
 	function remove_used_id(rm_id){
 		let idx=0;
-		console.log(rm_id);
 		let rm=new Array();
 		if(typeof rm_id =="number"){rm.push(rm_id);}else{rm=rm_id;}
 		rm.sort(sortNumber);
 		for(let i of rm){
 			idx=used_id.indexOf(i,idx);
-			console.log(i,idx);
 			if(idx!=-1){used_id.splice(idx,1);}else{idx=0;}
 		}
 	} 
@@ -294,11 +304,14 @@ function escapeHtml (string) {
 	}
 	
 	function showfbk(txt){
+		let h_lang='zh';
+		if(lang=='zh'){h_lang='en';}
 		$("#msgfbk").html('');
 		if(txt[0]!="<"){
 			txt='<p>'+txt+"</p>";
 		}
 		$("#msgfbk").html(txt);
+		$("#feedback ."+h_lang).hide();
 		$("#feedback").show();
 	}
 	
@@ -336,7 +349,7 @@ function escapeHtml (string) {
 				let failure=[];
 				l_xhr=xhr.length;
 				l_chg_rcd=chg_rcd.length;
-				if(l_xhr==0){return;}else{
+				if(l_xhr!=0){
 					// TODO fix non-login submit
 					if(typeof xhr=='string'){
 						location.href='index.html';
@@ -345,7 +358,7 @@ function escapeHtml (string) {
 					failure.push("<p>");
 					failure.push(svr_err.get(lang)+itmf_err.get(lang));
 					failure.push("</p>");
-					failure.push('<table><tbody><tr><th><span class="en">Name</span><span class="zh">名称</span></th><th><span class="en">action</span><span class="zh">操作</span><</th><th>URL</th></tr>');
+					failure.push('<table><tbody><tr><th><span class="en">Name</span><span class="zh">名称</span></th><th><span class="en">action</span><span class="zh">操作</span></th><th>URL</th></tr>');
 					for(;i<l_xhr;i++){
 						j=-1;
 						if(xhr[i]){
@@ -381,13 +394,13 @@ function escapeHtml (string) {
 						}
 					}
 					failure.push("</tbody></table>");
-					showfbk(failure.join());
-					chg_rcd=[];
+					showfbk(failure.join(""));
 				}
-				$("upf_btn").css({'background':'#E0E0E0'});
 			}).fail(function(xhr, status, error) {
 				showfbk(svr_err.get(lang));
 			});
+		$("upf_btn").css({'background':'#E0E0E0'});
+		chg_rcd=[];
 		locked=false;
 		chd=false;
 		force_sendback=false;
@@ -426,11 +439,11 @@ function escapeHtml (string) {
 	
 	function ck_v(n){
 		let cki=document.cookie;
-		let cki_a=cki.split(":");
+		let cki_a=cki.split(";");
 		let cki_p;
 		for(let i=0;i<cki_a.length;i++){
 		cki_p=cki_a[i].split("=");
-		if(cki_p[0]==n){
+		if(cki_p[0].trim()==n){
 			return cki_p[1];
 		}
 		}
@@ -549,9 +562,13 @@ function escapeHtml (string) {
 		// console.log(e.target.nodeName);
 		let x = e.clientX;
 		let y = e.clientY;
+		let xx=$(mn).width();
+		let yy=$(mn).height();
+		displaymenu(mn);
+		if(x+xx>document.documentElement.clientWidth){x=x-xx;}
+		if(y+yy>document.documentElement.clientHeight){y=y-yy;}
 		mn.css("left", x + 'px');
 		mn.css('top', y + 'px');
-		displaymenu(mn);
 	}
 	
 	function hidemenu(){
@@ -733,7 +750,7 @@ function escapeHtml (string) {
 
 		id=parseInt(modi.id);
 		if(id==1){
-			showfbk(svr_err.get(lang));
+			showfbk(root_err.get(lang));
 			return;
 		}
 		id_arr.push(id);	
