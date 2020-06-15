@@ -564,7 +564,8 @@ def piece_cupdate(req):
                 # print("itm1:",itm1)
             else:
                 idx += 1
-                old_c[idx:idx] = new_itm
+                # old_c[idx:idx] = new_itm :wrong
+                old_c[idx:idx] = (new_itm,)
             # print(old_c)
         elif kind == 2:
             print(i)
