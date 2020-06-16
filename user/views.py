@@ -50,7 +50,7 @@ gc_verify_container_tag = {'li', 'ul', 'h5'}
 gc_escape_char = re.compile("<|\"|>|'")
 # gc_url=re.compile(r"^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=#]+$")
 gc_img = re.compile(rb"<img.+?>", re.DOTALL)
-gc_a_target = re.compile(rb"target\s*?=.+?_blank\s*?\"|'", re.DOTALL | re.A | re.I)
+gc_a_target = re.compile(rb" target\s*?=.+?_blank\s*?\"|'", re.DOTALL | re.A | re.I)
 gc_style=re.compile(rb' style="display: none;"', re.DOTALL | re.A | re.I)
 
 # &符号不应出现两次转义前端已转义一次，后端不应再转义一次 &符本身作为转义字符的一个部分
