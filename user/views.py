@@ -315,6 +315,12 @@ def verify_bookmark(cnt):
     endhref_tail = b'</a></li>'
     html_content_len = len(html_content)
     
+    # <!DOCTYPE NETSCAPE-Bookmark-file-1> edge
+    # <!DOCTYPE NETSCAPE-Bookmark-file-1> IE
+    # <!DOCTYPE NETSCAPE-Bookmark-file-1> firefox
+    if not html_content_len or 
+        html_content[:35]!="<!DOCTYPE NETSCAPE-Bookmark-file-1>":
+        raise ValueError
     tag_id_cnt=1
     header_level = 0
     j = 0
