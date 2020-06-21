@@ -213,7 +213,6 @@ def verify_html(str_l):
         if cnt >= idx:
             child = node[idx]
             if child.tag not in gc_verify_container_tag:
-                # print("debug:209")
                 raise ValueError
             c_cnt = len(child)
             if c_cnt > 1:
@@ -221,20 +220,17 @@ def verify_html(str_l):
                     attr = child_href.attrib
                     if (len(attr)>1 or not attr.has_key("id")
                         or not is_int(attr['id'])):
-                        # print("debug:217")
                         raise ValueError
                     container.append(child)
                     child_cnt.append(c_cnt - 1)
                     cur[-1] = idx + 1
                     cur.append(0)
                 else:
-                    # print("debug:224")
                     raise ValueError
             else:
                 if child.tag == "h5":
                     if (child.attrib
                          or gc_escape_char.search(child.text)):
-                        # print("debug:230")
                         raise ValueError
                     
                 elif child.tag == "li":
@@ -243,28 +239,20 @@ def verify_html(str_l):
                     if (len(attr)>1 or not attr.has_key("id")
                         or not is_int(attr['id']) 
                         or child_href.tag != 'a'):
-                        # print("debug:239")
-                        # print("debug:",str( isinstance(attr['id'], int)))
-                        # print("debug:",str(attr))
                         raise ValueError
                     
                     attr = child_href.attrib
                     if (len(attr) != 1 or 
                         not attr.has_key("href") or 
                         gc_escape_char.search(child_href.text)):
-                        # print("debug:254")
-                        # print("debug:",attr)
-                        # print("debug:",child_href.text)
                         raise ValueError
 
                     try:
                         URL_CHECK(attr["href"])
                     except Exception:
-                        # print("debug:262")
                         raise ValueError
                         
                 else:
-                    # print("debug:250")
                     raise ValueError
                 cur[-1] = idx + 1
         else:
@@ -283,9 +271,7 @@ def content_update(str_l, username):
         str_l.append(LEN_ERR)
         return False
     try:
-        print("debug:content_update")
         verify_html(str_l)
-#         print("debug:verify_html finished")
     except ValueError:
         str_l.append(FORMAT_ERR)
         return False
@@ -318,8 +304,8 @@ def verify_bookmark(cnt):
     # <!DOCTYPE NETSCAPE-Bookmark-file-1> edge
     # <!DOCTYPE NETSCAPE-Bookmark-file-1> IE
     # <!DOCTYPE NETSCAPE-Bookmark-file-1> firefox
-    if not html_content_len or 
-        html_content[:35]!="<!DOCTYPE NETSCAPE-Bookmark-file-1>":
+    if (not html_content_len 
+        or html_content[:35]!="<!DOCTYPE NETSCAPE-Bookmark-file-1>"):
         raise ValueError
     tag_id_cnt=1
     header_level = 0
@@ -424,10 +410,6 @@ def fupdate(req):
         if div_e == -1:
             return HttpResponse(FORMAT_ERR, content_type='application/json')
         content = content[div_e + 1:-6]
-#     print("debug:fupdate")
-#     f=open("/media/data/编程/Project/webbookmark/backups/modify1",'wb')
-#     f.write(content)
-#     f.close()
     if content[:3] == b"<ul":
         # 删除img标签
         content = gc_img.sub(b'', content)
@@ -436,9 +418,6 @@ def fupdate(req):
         # 删除隐藏所使用的style字符
         content = gc_style.sub(b'', content)
         
-        f=open("/media/data/编程/Project/webbookmark/backups/modify2",'wb')
-        f.write(content)
-        f.close()
         str_l = [content]
         if content_update(str_l, req.user.username):
             return HttpResponse('"' + str_l[1] + '"', content_type='application/json')
@@ -503,7 +482,6 @@ def piece_cupdate(req):
     username = req.user.username
     try:
         c = loads(req.body)
-        print(c)
     except Exception:
         return HttpResponse(FORMAT_ERR, content_type='application/json')
         
@@ -528,8 +506,6 @@ def piece_cupdate(req):
 
         kind = i[1]
         if kind == 1 or kind == 4:
-            print(i)
-            print(old_c)
             # 1.新增链接 4.新增文件夹
             if (gc_escape_char.search(i[2]) or len(i) < 5 
                 or not isinstance(i[4], int) or i[4] <= 0):
@@ -566,16 +542,11 @@ def piece_cupdate(req):
                 itm1=old_c[idx][idx_s + 5:]
                 del old_c[idx]       
                 old_c[idx:idx] = itm0, new_itm, itm1
-                # print("itm0:",itm0)
-                # print("itm1:",itm1)
             else:
                 idx += 1
                 # old_c[idx:idx] = new_itm :wrong
                 old_c[idx:idx] = (new_itm,)
-            # print(old_c)
         elif kind == 2:
-            print(i)
-            print(old_c)
             # 2.修改链接
             if len(i)<3:
                 err_itm.append(i[0]) 
@@ -590,12 +561,12 @@ def piece_cupdate(req):
             
             pieces = list()
             itm = old_c[idx]
-            # print(itm)
+
             idx_e = itm.find("</li>",idx_s)
             idx_s=itm.rfind("<li",0,idx_s)
-            # print("idx_e ",idx_e,"idx_s",idx_s)
+
             itm0, p,itm1 =itm[:idx_s], itm[idx_s:idx_e + 5], itm[idx_e + 5:]
-            # print("p:",p)
+
             idx_href = 0
             # 修改链接
             if i[3]:
@@ -631,16 +602,13 @@ def piece_cupdate(req):
                         continue
                     pieces.append(p[idx_label+1:])
                 
-            # print("pieces:",pieces)
             del old_c[idx]
             old_c[idx:idx]=itm0,"".join(pieces),itm1
         elif kind == 3:
-            print(i)
-            print(old_c)
             # 3.删除链接
             s = "id=\"" + str(i[0]) + '"'
             idx, idx_s = find_str(old_c, s)
-            # print("idx",idx,'idx_s',idx_s,'s',s)
+
             if idx == -1:
                 err_itm.append(i[0]) 
                 continue
@@ -655,11 +623,8 @@ def piece_cupdate(req):
             itm0, itm1 = itm[:itm0], itm[itm1 + 5:]
             del old_c[idx]
             old_c[idx:idx] = (itm0, itm1)
-            # print("in kind:3")
-            # print(old_c[idx])
+
         elif kind == 5:
-            print(i)
-            print(old_c)
             # 5.修改文件夹
             if gc_escape_char.search(i[2]) or len(i) < 3:
                 err_itm.append(i[0]) 
@@ -686,8 +651,6 @@ def piece_cupdate(req):
             old_c[idx:idx] = itm0, new_itm, itm1
             
         elif kind == 6:
-            print(i)
-            print(old_c)
             # 6.删除文件夹
             s = "id=\"" + str(i[0]) + '"'
             header, header_s = find_str(old_c, s)
@@ -704,7 +667,7 @@ def piece_cupdate(req):
             itm0, itm1 = old_c[header][:header_s], old_c[header][header_s:]
             del old_c[header]
             old_c[header:header] = itm0, itm1
-            # print("itm0:",itm0)
+
             header += 1
             tail = header
             tail_s = 0
@@ -730,7 +693,7 @@ def piece_cupdate(req):
             del old_c[header:tail + 1]
             
     with gzip.open(fname, 'wt', 6, encoding='utf8') as f:
-           # print(old_c)
+
            f.write("".join(old_c)) 
     return HttpResponse(dumps(err_itm), content_type='application/json')
 
