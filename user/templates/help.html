@@ -11,89 +11,8 @@ p{margin: 0;}
 div.zh,div.en{display:none;flex-direction:column;}
 .imp{color:red;}
 </style>
-<script>
-	var lang;
-	
-	function ch_lang() {
-			let e2;
-			let e = window.event.target;
-			e.style.color='white';
-			e.style.background='black';
-			lang = e.getAttribute('id');
-			let d_zh=document.getElementsByClassName("zh")[0];
-			let d_en=document.getElementsByClassName("en")[0];
-			switch (lang) {
-			case 'zh':
-				e2=document.getElementById("en");	
-				d_zh.style.display="flex";
-				d_en.style.display="none";
-				break;
-			case 'en':
-				e2=document.getElementById("zh");	
-				d_en.style.display="flex";
-				d_zh.style.display="none";
-				break;
-			}
-			e2.style.color='black';
-			e2.style.background='white';
-		}
-	
-	
-	function get_default_lang(){
-		let la=navigator.language||navigator.userLanguage;
-		la=la.substr(0, 2);
-		lang='zh';
-		if(la != 'zh'){
-			lang='en';
-		}
-		let e=document.getElementsByClassName(la)[0];
-		e.style.display="flex";
-	}
-	
-	window.onload=function(){
-		get_default_lang();
-		document.getElementById(lang).click();
-		
-	}
-</script>
 </head>
 <body>
-<div id="lg">
-		<button id="en" onclick="ch_lang();">English</button>
-		<button id="zh" onclick="ch_lang();">中文</button>
-</div>
-
-<div class='zh'>
-<h4>用法</h4>
-<h5>添加、修改、删除书签或文件夹</h5>
-<p>在对应的书签图标或文件夹名称上用鼠标点击，弹出快捷菜单，选择对应的操作</p>
-<h5>访问对应的书签</h5>
-<p>点击书签，网页将在新的标签页中打开</p>
-<h5>展开、折叠文件夹</h5>
-<p>显示或者隐藏该文件夹的子文件夹和子书签</p>
-<h4>名词释义</h4>
-<h5>同步至服务器</h5>
-<p>将修改后的书签同步到服务器，这样更新的内容可以保留，下次访问的时候可以访问更新后的内容，若改变书签后不进行同步，新的内容将丢失</p>
-<h5>退出 </h5>
-<p>退出登录，你若需要再次访问该页面，需要重新登录；同时他人也无法使用您的浏览器对您的书签进行修改</p>
-<h5>清除账户</h5>
-<p>将您的书签及账户名从本网站服务器中删除，如果您需要这些书签，请保存到本地。方法如下：</p>
-<ol>
-<li>登录后，浏览器的地址栏中显示URL，例如：http://127.0.0.1:8000/<span class="imp">owner.html?</span>2709821b9389377c472f64e7981ffa4894a78b4dd0185999543857c11fdce3b8</li>
-<li>在浏览器地址栏中将“<span class="imp">owner.html?</span>”替换为“<span class="imp">c/</span>”，上述的地址将变为：http://127.0.0.1:8000/<span class="imp">c/</span>2709821b9389377c472f64e7981ffa4894a78b4dd0185999543857c11fdce3b8</li>
-<li>按下Enter键</li>
-<li>此时，浏览器中的内容就是你的书签</li>
-<li>将内容复制到文本文件中并保存，以免丢失</li>
-</ol>
-<h5>上传文件</h5>
-<p>当您想把已有的(从浏览器中导出的，html格式的)书签变成在线书签时，可以将书签文件上传。或者服务器崩溃，您保存了书签到本地，现在可以重新上传。注意，它将覆盖已有的书签，而不是将其添加到已有的书签中。</p>
-<h4>忘记密码</h4>
-<p><a href="/password.html">请点击这里</a></p>
-<h4>网站图标不可见或与实际不符</h4>
-<p>本网站直接从对应的网站获取图标(favicon.ico)，若该网站不提供或无法访问，则会被替代或不可见。</p>
-<h4>服务器故障，更新的内容无法上传</h4>
-<p>如果是PC端的浏览器，可以尝试此方法，<a href="/preservation.html">这里</a>。其他平台，无法保存，抱歉！</p>
-</div>
 
 <div class='en'>
 <h4>Usage</h4>

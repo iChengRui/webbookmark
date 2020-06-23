@@ -149,31 +149,23 @@ function escapeHtml (string) {
 	
 	xmlhttp=new XMLHttpRequest();
 	
-	var xx;// 调试使用
 	const batch=10;
 	const shr_base="http://127.0.0.1/visitor.html?";
 	const up_max=65536; //最多字符数 2**16
-	const up_len_err=new Map([['zh','最多允许65536个字符(2^16),请删除不必要的书签或使用简短的名称，如有其他事情，可先保存至本地'],
-		['en','at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.']]);
-	const url_err=new Map([['zh','网址为空或包含不允许的字符或格式错误，请修改'],['en','url is blank or contains illegal chars & fomart']]);
-	const svr_err=new Map([['zh','服务器内部故障，所有您的更新可能丢失。若正在使用电脑的浏览器，可将内容保存至本地，请点击"帮助"按钮获取操作步骤；对于其他设备，暂无补救方案。请发送邮件至1575658778@qq.com，告知故障，以便维护。'],
-		['en','server internal error,all updated content may be lost. With computer, you can save those bookmark locally and steps are in "help" page;for other devices,there is no remedy. Please email to 1575658778@qq.com for repair.']]);
-	const name_err=new Map([['zh','名称为空，请输入名称'],['en','name is blank']]);
-	const success=new Map([['zh','上传成功'],['en','Upload finished']]);
-	const saved_err=new Map([['zh','文件未保存，请先保存，若要放弃保存直接关闭页面'],['en','File is not saved,please save it at first.If you don\'t want to save,close Tab-page directly.']]);
-	const fmt_err=new Map([['zh','上传文件格式错误，请修改后上传'],['en','Format of uploaded file is not correct,modify and upload again']]);
-	const upf_ntc=new Map([['zh','文件上传中，若成功将更新页面，失败后会提示您'],['en','file is uploading. If succeed,page will be freshed; otherwise,notice will be shown.']]);
-	const rm_ntc=new Map([['zh','账户的内容将被清空，建议您保留一份内容到本地，点击取消后，可以保存文件至本地，再次点击"清除账户"，完成清除'],
-		['en','All content of this account will be removed, save the webpage locally might be proper, click the "Close Account" again to finish it.']]);
-	const root=new Map([['zh','<ul id="1"><h5>根文件夹</h5></ul>'],['en','<ul id="1"><h5>root folder</h5></ul>']])
-	const root_err=new Map([['zh','可以修改根目录名称，但无法删除'],['en','For root directory,name can be modified but can\'t be deleted.']])
-	const shr_url_err=new Map([['zh','书签正在上传或地址错误，无法分享'],['en','Bookmark is uploading or with wrong address, can not be shared.']]);
-	const itmf_err=new Map([['zh','下列内容更新失败：'],['en','The following items fail to update:']]);
-	var action_err=new Map();
-	action_err.set('zh',new Map([[1,'新增链接'],[2,'修改链接'],[3,'删除链接'],[4,'新增文件夹'],[5,'修改文件夹'],[6,'删除文件夹']]));
-	action_err.set('en',new Map([[1,'add link'],[2,'modify link'],[3,'delete link'],[4,'add folder'],[5,'modify folder'],[6,'delete folder']]));
-	//const url_err=new Map([['zh',''],['en','']]);
-	
+	const up_len_err='at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.';
+	const url_err='url is blank or contains illegal chars & fomart';
+	const svr_err='server internal error,all updated content may be lost. With computer, you can save those bookmark locally and steps are in "help" page;for other devices,there is no remedy. Please email to 1575658778@qq.com for repair.';
+	const name_err='name is blank';
+	const success='Upload finished';
+	const saved_err='File is not saved,please save it at first.If you don\'t want to save,close Tab-page directly.';
+	const fmt_err='Format of uploaded file is not correct,modify and upload again';
+	const upf_ntc='file is uploading. If succeed,page will be freshed; otherwise,notice will be shown.';
+	const rm_ntc='All content of this account will be removed, save the webpage locally might be proper, click the "Close Account" again to finish it.';
+	const root='<ul id="1"><h5>root folder</h5></ul>';
+	const root_err='For root directory,name can be modified but can\'t be deleted.';
+	const shr_url_err='Bookmark is uploading or with wrong address, can not be shared.';
+	const itmf_err='The following items fail to update:';
+	action_err=new Map([[1,'add link'],[2,'modify link'],[3,'delete link'],[4,'add folder'],[5,'modify folder'],[6,'delete folder']]);
 	
 	function sortNumber(a,b) 
 	{ 
@@ -251,7 +243,7 @@ function escapeHtml (string) {
 		let ok=false;
 		$("#cnlupf").hide();
 		$("#hupf").hide();
-		$("#errmsgf").html(upf_ntc.get(lang));
+		$("#errmsgf").html(upf_ntc);
 		  $.ajax({
 			url: '/user/fu',
 			type: 'post',
@@ -263,13 +255,13 @@ function escapeHtml (string) {
 		  }).done(function (res) {
 			  switch(res){
 				case 5:
-					$("#errmsgf").html(up_len_err.get(lang));
+					$("#errmsgf").html(up_len_err);
 					break;
 				case 6:
-					$("#errmsgf").html(root_count_err.get(lang));
+					$("#errmsgf").html(root_count_err);
 					break;
 				case 7:
-					$("#errmsgf").html(fmt_err.get(lang));
+					$("#errmsgf").html(fmt_err);
 					break;
 				default:
 					$.ajax({
@@ -291,42 +283,29 @@ function escapeHtml (string) {
 							locked=false;
 							used_id=get_used_id();
 						},
-						error:function(res){$("errmsgf").html(svr_err.get(lang));}
+						error:function(res){$("errmsgf").html(svr_err);}
 					});
 				break;}
 			if(!ok){
 				$("#clsf").show();
 			}
 		  }).fail(function (res) {
-			$("#errmsgf").html(svr_err.get(lang));
+			$("#errmsgf").html(svr_err);
 			$("#clsf").show();
 		  });
 	}
 	
 	function showfbk(txt){
-		let h_lang='zh';
-		if(lang=='zh'){h_lang='en';}
 		$("#msgfbk").html('');
 		if(txt[0]!="<"){
 			txt='<p>'+txt+"</p>";
 		}
 		$("#msgfbk").html(txt);
-		$("#feedback ."+h_lang).hide();
 		$("#feedback").show();
 	}
 	
 	function cls_fbk(){
 		$("#feedback").hide();
-	}
-	
-
-	function get_default_lang(){
-		let la=navigator.language||navigator.userLanguage;
-		la=la.substr(0, 2);
-		lang='zh';
-		if(la != 'zh'){
-			lang='en';
-		}
 	}
 
 	function sendtobackground() {
@@ -356,9 +335,9 @@ function escapeHtml (string) {
 						return;
 					}
 					failure.push("<p>");
-					failure.push(svr_err.get(lang)+itmf_err.get(lang));
+					failure.push(svr_err+itmf_err);
 					failure.push("</p>");
-					failure.push('<table><tbody><tr><th><span class="en">Name</span><span class="zh">名称</span></th><th><span class="en">action</span><span class="zh">操作</span></th><th>URL</th></tr>');
+					failure.push('<table><tbody><tr><th>Name</th><th>action</th><th>URL</th></tr>');
 					for(;i<l_xhr;i++){
 						j=-1;
 						if(xhr[i]){
@@ -375,7 +354,7 @@ function escapeHtml (string) {
 									}else{
 										tag_name=chg_rcd[j][2];
 									}
-									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(lang).get(chg_rcd[j][1])+"</td><td></td></tr>");
+									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(chg_rcd[j][1])+"</td><td></td></tr>");
 								}else {
 									if(chg_rcd[j][1]==3){
 										tag_name='id'+chg_rcd[j][0];
@@ -386,7 +365,7 @@ function escapeHtml (string) {
 									if(chg_rcd[j].length>3){
 										href=chg_rcd[j][3];
 									}
-									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(lang).get(chg_rcd[j][1])+"</td><td>"+href+"</td></tr>");
+									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(chg_rcd[j][1])+"</td><td>"+href+"</td></tr>");
 								}
 							}
 							// TODO wait for decision delete or not.
@@ -397,7 +376,7 @@ function escapeHtml (string) {
 					showfbk(failure.join(""));
 				}
 			}).fail(function(xhr, status, error) {
-				showfbk(svr_err.get(lang));
+				showfbk(svr_err);
 			});
 		$("upf_btn").css({'background':'#E0E0E0'});
 		chg_rcd=[];
@@ -428,11 +407,9 @@ function escapeHtml (string) {
 				$("#shr").html(shr_base+src);
 			} else{
 				used_id=[1];
-				ifm.innerHTML=root.get(lang);
-				new_name='根文件夹';
-				if(lang=='en'){ new_name='root folder';}
-				chg_rcd.push([1,4,new_name]);
-				$("#shr").html(shr_url_err.get(lang));
+				ifm.innerHTML=root;
+				chg_rcd.push([1,4,'root folder']);
+				$("#shr").html(shr_url_err);
 			}
 		}
 	}	
@@ -450,33 +427,10 @@ function escapeHtml (string) {
 		return null;
 	}
 	
-	function ck_lang() {
-			let e2;
-			let e = window.event.target;
-			if(e.nodeName=='DIV'){return;}
-			e.style.color='white';
-			e.style.background='black';
-			lang = e.getAttribute('id');
-			switch (lang) {
-			case 'zh':
-				e2=document.getElementById("en");	
-				$(".en").hide();
-				$(".zh").show();
-				break;
-			case 'en':
-				e2=document.getElementById("zh");	
-				$(".zh").hide();
-				$(".en").show();
-				break;
-			}
-			e2.style.color='black';
-			e2.style.background='white';
-		}
-	
 	function ck(e){
 		if(chd){
 			e.preventDefault();
-			e.returnValue = '修改未提交;moidfication is not saved';
+			e.returnValue = 'moidfication is not saved';
 			w_close=true;
 			sendtobackground();
 			}
@@ -510,12 +464,6 @@ function escapeHtml (string) {
 		
 		ifm=document.getElementById("ifm");
 		ifm.onclick=menu;
-		
-		// 选择语言
-		var lgc=document.getElementById("lg");	
-		lgc.onclick=ck_lang;
-		get_default_lang();
-		document.getElementById(lang).click();
 		
 		// 导入自己的书签
 		xmlhttp.onreadystatechange=ck_st;
@@ -559,7 +507,6 @@ function escapeHtml (string) {
 				return null;
 			}
 		}
-		// console.log(e.target.nodeName);
 		let x = e.clientX;
 		let y = e.clientY;
 		let xx=$(mn).width();
@@ -655,7 +602,7 @@ function escapeHtml (string) {
 		let id=0;
 		new_name = $("#name").val();
 		if(!new_name){
-			$("#errmsg").html(name_err.get(lang));
+			$("#errmsg").html(name_err);
 			return null;
 		}
 		new_name=escapeHtml(new_name);
@@ -668,7 +615,7 @@ function escapeHtml (string) {
 			} else {
 				new_url = $("#url").val();
 				if(!new_url||!valid_url(new_url)) {
-					$("#errmsg").html(url_err.get(lang));
+					$("#errmsg").html(url_err);
 					return null;
 				}
 				id=get_avaliable_id();
@@ -687,7 +634,7 @@ function escapeHtml (string) {
 				id=p_id;
 				if(old_url){
 					if(!new_url||!valid_url(new_url)) {
-						$("#errmsg").html(url_err.get(lang));
+						$("#errmsg").html(url_err);
 						return null;
 					}
 					i = $(modi).children("a")[0];
@@ -750,7 +697,7 @@ function escapeHtml (string) {
 
 		id=parseInt(modi.id);
 		if(id==1){
-			showfbk(root_err.get(lang));
+			showfbk(root_err);
 			return;
 		}
 		id_arr.push(id);	
@@ -825,9 +772,9 @@ function escapeHtml (string) {
 		}).done(function(xhr, status, error) {
 			location.href='/index.html';
 		}).fail(function(){
-			let msg=svr_err.get(lang);
+			let msg=svr_err;
 			if(chd){
-				msg=msg+';'+saved_err.get(lang);
+				msg=msg+';'+saved_err;
 			}
 			showfbk(msg);
 			})
@@ -838,7 +785,7 @@ function escapeHtml (string) {
 	function rmv(){
 		if(!rm_notified){
 			rm_notified=true;
-			showfbk(rm_ntc.get(lang));
+			showfbk(rm_ntc);
 			return;
 		}else{
 			$.ajax({
@@ -852,7 +799,7 @@ function escapeHtml (string) {
 				if(xhr.readyState==4&&(xhr.status==200||xhr.status==302)){
 				location.href='/index.html';}
 			}).fail(function(){
-				showfbk(svr_err.get(lang));
+				showfbk(svr_err);
 				})
 		}	
 	}
@@ -868,17 +815,13 @@ function escapeHtml (string) {
 <body>
 <div id="header">
 <div id="cntn">
-	<div id="lg">
-			<button id="en">English</button>
-			<button id="zh">中文</button>
-	</div>
 	<div id="ctr">
-	<button onclick="force_sndbk();"><span class='zh'>同步至服务器</span><span class='en'>Sync to Server</span></button>
-	<button id='upf_btn' onclick="UploadFile();"><span class='zh'>上传文件</span><span class='en'>Upload File</span></button>
-	<button onclick="logout();"><span class='zh'>退出</span><span class='en'>Log Out</span></button>
-	<button onclick="hlp();"><span class='zh'>帮助</span><span class='en'>Help</span></button>
-	<button onclick="shrtgl();"><span class='zh'><span class='shroff'>显示</span><span class='shron'>隐藏</span>分享链接</span><span class='en'><span class='shroff'>Display</span><span class='shron'>Hide</span> share URL</span></button>
-	<button onclick="rmv();"><span class='zh'>清除账户</span><span class='en'>Remove Account</span></button>
+	<button onclick="force_sndbk();">Sync to Server</button>
+	<button id='upf_btn' onclick="UploadFile();">Upload File</button>
+	<button onclick="logout();">Log Out</button>
+	<button onclick="hlp();">Help</button>
+	<button onclick="shrtgl();"><span class='shroff'>Display</span><span class='shron'>Hide</span> share URL</button>
+	<button onclick="rmv();">Remove Account</button>
 	</div>
 </div>
 	
@@ -888,56 +831,53 @@ function escapeHtml (string) {
 <button ></button>
 </div>
 <div id='shrinfo'>
-	<label><span class="zh">用于分享的网址:</span><span class="en">URL for share:</span></label>
+	<label>URL for share:</label>
 	<p id="shr"></p>
-	<p><span class="zh">此链接与用户名绑定，不会因内容变化而变化</span><span class="en">This URL is associated with your username, won&#39;t change with modification of contents.</span>
-	<a href=""><span class="zh">转换为二维码</span><span class="en">make QR code</span></a>
+	<p>This URL is associated with your username, won&#39;t change with modification of contents.</p>
+	<a href="">make QR code</a>
 </div>
 	<div id="ifm" ></div>
 	<div id="upf">
 		<form id="fm" onsubmit="return false;" enctype="multipart/form-data">
-		<label><span class='zh'>文件地址</span></label><span class='en'>File Address</span> <input type="file" name='upfile'> 
+		<label>File Address</label> <input type="file" name='upfile'> 
 		<p id="errmsgf"></p>
-		<button id='cnlupf' onclick="cnl_upf()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
-		<button id='hupf' onclick="h_upf()"><span class='zh'>上传</span><span class='en'>Upload</span></button>
-		<button id='clsf' onclick="cls_f()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
+		<button id='cnlupf' onclick="cnl_upf()">Cancel</button>
+		<button id='hupf' onclick="h_upf()">Upload</button>
+		<button id='clsf' onclick="cls_f()">Close</button>
 		</form>
 	</div>
 	<div id='mod'>
 		<div>
-		<label><span class='zh'>名称</span></label><span class='en'>name</span> <input id="name" type="text" value="" required="required">
+		<label>name</label> <input id="name" type="text" value="" required="required">
 		</div>
 		<div id="urlm">
-			<label><span class='zh'>网址</span><span class='en'>URL</span></label> <input id="url" type="url" value="" required="required">
+			<label>URL</label> <input id="url" type="url" value="" required="required">
 		</div>
 		<div id="errmsg" style="color: red"></div>
 		<div style="display:inline-block;">
-		<button id='cnlb' onclick="cnl()"><span class='zh'>取消</span><span class='en'>Cancel</span></button>
-		<button id='cnfm' onclick="hmod()"><span class='zh'>已完成</span><span class='en'>OK</span></button>
+		<button id='cnlb' onclick="cnl()">Cancel</button>
+		<button id='cnfm' onclick="hmod()">OK</button>
 		</div>
 	</div>
 	<div id='feedback'>
 	<div id='msgfbk'>
 	</div>
-	<button id='clsfbk' onclick="cls_fbk()"><span class='zh'>关闭</span><span class='en'>Close</span></button>
+	<button id='clsfbk' onclick="cls_fbk()">Close</button>
 	</div>
 
 	<div id="foldermenu">
-		<div id="makefolder" onclick="dadd(this);"><span class='zh'>新建子文件夹</span><span class='en'>new subfolder</span></div>
-		<div id="makeitem" onclick="dadd(this);"><span class='zh'>新建子书签</span><span class='en'>new bookmark</span></div>
-		<div id="deletefolder" onclick="del(this);"><span class='zh'>删除此文件夹</span><span class='en'>delete folder</span></div>
-		<div id="modifyfolder" onclick="dmod(this);"><span class='zh'>修改文件夹名称</span><span class='en'>modify folder name</span></div>
-		<div id="expandfolder" onclick="xpd(this);"><span class='zh'>展开文件夹</span><span class='en'>expand</span></div>
-		<div id="collapsefolder" onclick="cps(this);"><span class='zh'>折叠文件夹</span><span class='en'>collapse</span></div>
+		<div id="makefolder" onclick="dadd(this);">new subfolder</div>
+		<div id="makeitem" onclick="dadd(this);">new bookmark</div>
+		<div id="deletefolder" onclick="del(this);">delete folder</div>
+		<div id="modifyfolder" onclick="dmod(this);">modify folder name</div>
+		<div id="expandfolder" onclick="xpd(this);">expand</div>
+		<div id="collapsefolder" onclick="cps(this);">collapse</div>
 	</div>
 
 	<div id="itemmenu">
-		<div id="delitm" onclick="del(this);"><span class='zh'>删除此项</span><span class='en'>remove</span></div>
-		<div id="moditm" onclick="dmod(this);"><span class='zh'>修改此项</span><span class='en'>modify</span></div>
+		<div id="delitm" onclick="del(this);"><span class='en'>remove</span></div>
+		<div id="moditm" onclick="dmod(this);"><span class='en'>modify</span></div>
 	</div>
-	<div id="locknotice">
-			<span class='en'>Waiting for sync.Color of Sync button will be grey if updating is availiable.</span>
-			<span class='zh'>正在上传更新的内容。请等待更新完成后，同步按钮将变成灰色，再更新书签。</span>
-	</div>
+	<div id="locknotice">Waiting for sync.Color of Sync button will be grey if updating is availiable.</div>
 </body>
 </html>

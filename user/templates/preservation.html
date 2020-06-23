@@ -8,72 +8,8 @@ div.zh,div.en{display:none;flex-direction:column;}
 #pic{display:flex;flex-direction:row;flex-wrap:wrap; justify-content:space-between;}
 #pic>div>label{display:block;color:red}
 </style>
-<script>
-	var lang;
-	
-	function ch_lang() {
-			let e2;
-			let e = window.event.target;
-			e.style.color='white';
-			e.style.background='black';
-			lang = e.getAttribute('id');
-			let d_zh=document.getElementsByClassName("zh")[0];
-			let d_en=document.getElementsByClassName("en")[0];
-			switch (lang) {
-			case 'zh':
-				e2=document.getElementById("en");	
-				d_zh.style.display="flex";
-				d_en.style.display="none";
-				break;
-			case 'en':
-				e2=document.getElementById("zh");	
-				d_en.style.display="flex";
-				d_zh.style.display="none";
-				break;
-			}
-			e2.style.color='black';
-			e2.style.background='white';
-		}
-	
-	function get_default_lang(){
-		let la=navigator.language||navigator.userLanguage;
-		la=la.substr(0, 2);
-		lang='zh';
-		if(la != 'zh'){
-			lang='en';
-		}
-		let e=document.getElementsByClassName(la)[0];
-		e.style.display="flex";
-	}
-	
-	window.onload=function(){
-		get_default_lang();
-		document.getElementById(lang).click();
-	}
-</script>
 </head>
 <body>
-<div id="lg">
-		<button id="en" onclick="ch_lang();">English</button>
-		<button id="zh" onclick="ch_lang();">中文</button>
-</div>
-<div class="zh">
-<h5>当书签已更新，因服务器故障无法上传时的补救措施</h5>
-<p>整个步骤大概需要3-5分钟，且只能在PC端浏览器上进行，其他平台无法补救。步骤如下：</p>
-<ol>
-<li>在浏览器书签页面，同时按下Ctrl、Shift、I（大写字母i)三个键</li>
-<li>找到&quot; 查看器&quot; ,将鼠标指针移动到该位置并点击，见图1</li>
-<li>找到右侧的鼠标指针符号,将鼠标指针移动到该位置并点击，见图1</li>
-<li>将鼠标指针移动到&quot; 根文件夹&quot; (根文件夹目录，你可以修改它的名字，就是最上面的文件夹名称)，点击它</li>
-<li>在屏幕下方，对应的位置将会被高亮显示，见图2</li>
-<li>找到上方的&quot; &lt; div id= &quot; ifm &quot; &gt;&quot; ，将鼠标指针移动到它上面，并点击它；然后点击鼠标右键，弹出快捷菜单，见图3</li>
-<li>将鼠标指针移动到&quot; 复制&quot; 上，并单击后续的&quot; 内部HTML&quot; ，此时书签内容已经保存到你的剪贴板中了</li>
-<li>打开任意文本编辑器，比如windows中的记事本，新建文本文件，将内容粘贴到文件中并保存</li>
-<li>待后续服务器正常后，将保存的文件进行上传</li>
-<li>若服务器持续故障，请联系网站管理员1575658778@qq.com</li> 
-</ol>
-</div>
-
 <div class="en">
 <h5>Remedy for upload failure</h5>
 <p>The entire step takes about 3-5 minutes and can only be performed on a PC-side browser, other platforms not available. Here are the steps:</p>

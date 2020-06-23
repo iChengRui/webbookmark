@@ -47,78 +47,39 @@ label{font-size:large;}
 <!-- <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script> -->
 <script src="/jQuery2.1.4.js"></script>
 <script>
-	var lang; //language
 	var submited=true; //是否为提交，用于显示错误信息
-	const u_err=new Map([['zh','用户名'],['en','username']]);
-	const p_err=new Map([['zh','密码'],['en','password']]);
-	const fdbck_err=new Map([['zh','密码或用户名不符合要求或错误或不存在，请修改'],['en','username or password is wrong or dosen\'t exist,modify it']]);
-	const svr_err=new Map([['zh','服务器内部故障，请发送邮件至1575658778@qq.com'],['en','server internal error,please email to 1575658778@qq.com']]);
-	const ip_err=new Map([['zh','此IP错误超过5次，请于24小时后访问'],['en','five times failure with this ip,please try again after 24 hours']]);
-	const len_err=new Map([['zh',' 字符数少于5个或多于12个'],['en',' chars are less than 5 or more than 12']]);
-	const rpt_err=new Map([['zh','此用户名已存在，请更换用户名'],['en','this username already exists.Please change another name.']]);
-	const consistency_err=new Map([['zh',' 两次输入的密码不一致，请重新输入'],['en',' two passwords entered are inconsistent,please enter again.']]);
+	const u_err='username';
+	const p_err='password';
+	const fdbck_err='username or password is wrong or dosen\'t exist,modify it';
+	const svr_err='server internal error,please email to 1575658778@qq.com';
+	const ip_err='five times failure with this ip,please try again after 24 hours';
+	const len_err=' chars are less than 5 or more than 12';
+	const rpt_err='this username already exists.Please change another name.';
+	const consistency_err=' two passwords entered are inconsistent,please enter again.';
 	
 	var regs=/[^A-Za-z_0-9]/;
 	var regp=/^(?=.*[A-Za-z])(?=.*\d).+/;
 	
-	function get_default_lang(){
-		let la=navigator.language||navigator.userLanguage;
-		la=la.substr(0, 2);
-		lang='zh';
-		if(la != 'zh'){ lang='en'; }
-	}
-
-function ck_lang() {
-		let e2;
-		let e = window.event.target;
-		if(e.nodeName=='DIV'){return;}
-		e.style.color='white';
-		e.style.background='black';
-		lang = e.getAttribute('id');
-		switch (lang) {
-		case 'zh':
-			e2=document.getElementById("en");	
-			$(".en").hide();
-			$(".zh").show();
-			break;
-		case 'en':
-			e2=document.getElementById("zh");	
-			$(".zh").hide();
-			$(".en").show();
-			break;
-		}
-		e2.style.color='black';
-		e2.style.background='white';
-	}
-
-	
-window.onload=function(){	
-	var lgc=document.getElementById("lg");
+	window.onload=function(){	
+		$(":input").change(function(){$("#errmsg").text('');});	
 		
-	// 选择语言
-	lgc.onclick= ck_lang;
-	get_default_lang();
-	document.getElementById(lang).click();
-
-	$(":input").change(function(){$("#errmsg").text('');});	
-	
-	$("input[name='way']").click(function() {
-		var w = $(this).val();
-		if (w == 'l') {
-			$("#cfm").hide();
-			$("#tips").hide();
-			$("#form a").show();
-		} else {
-			$("#tips").show();
-			$("#cfm").show();
-			$("#form a").hide();
-		}
-	})
-	
-	$("#cfm").hide();
-	$("#tips").hide();
-	
-}
+		$("input[name='way']").click(function() {
+			var w = $(this).val();
+			if (w == 'l') {
+				$("#cfm").hide();
+				$("#tips").hide();
+				$("#form a").show();
+			} else {
+				$("#tips").show();
+				$("#cfm").show();
+				$("#form a").hide();
+			}
+		})
+		
+		$("#cfm").hide();
+		$("#tips").hide();
+		
+	}
 	function Up() {
 		submited=true;
 		let up_url='http://127.0.0.1:8000/user/login'; 
@@ -126,16 +87,16 @@ window.onload=function(){
 		
 		let user=$("input[name='username']").val();
 		if(user.length<5 ||user.length>12){
-			$("#errmsg").text(u_err.get(lang)+len_err.get(lang));
+			$("#errmsg").text(u_err+len_err);
 			return;
 		}
 		let pwd=$("input[name='pwd']").val();
 		if(pwd.length<5 ||pwd.length>12){
-			$("#errmsg").text(p_err.get(lang)+len_err.get(lang));
+			$("#errmsg").text(p_err+len_err);
 			return;
 		}
 		if(!regp.test(pwd)||!regs.test(pwd)){
-			$("#errmsg").text(fdbck_err.get(lang));
+			$("#errmsg").text(fdbck_err);
 			return;
 		}
 		let w=$('#form input:radio[name="way"]:checked').val(); 
@@ -143,7 +104,7 @@ window.onload=function(){
 			let pwd2=$("input[name='pwd2']").val();
 			up_url='http://127.0.0.1:8000/user/reg';
 			if(pwd!=pwd2){
-				$("#errmsg").text(consistency_err.get(lang));
+				$("#errmsg").text(consistency_err);
 				$("input[name='pwd']").val('');
 				$("input[name='pwd2']").val('');
 				return;
@@ -167,50 +128,33 @@ window.onload=function(){
 			*/
 			switch(res){
 			case 0:
-				$("#errmsg").text(fdbck_err.get(lang));
+				$("#errmsg").text(fdbck_err);
 				break;
 			case 1:
 				return false;
 			case 2:
-				$("#errmsg").text(ip_err.get(lang));
+				$("#errmsg").text(ip_err);
 				break;
 			case 3:
-				$("#errmsg").text(svr_err.get(lang));
+				$("#errmsg").text(svr_err);
 				break;
 			case 4:
-				$("#errmsg").text(rpt_err.get(lang));
+				$("#errmsg").text(rpt_err);
 				$("input[name='username']").val('');
 				break;
 			default:
 				location.href="/owner.html?"+res;
 			}
 		}).fail(function(res) {
-			$("#errmsg").text(svr_err.get(lang));
+			$("#errmsg").text(svr_err);
 		});
 	};
 </script>
 </head>
 <body>
-	<div id="lg">
-		<button id="en">English</button>
-		<button id="zh">中文</button>
-	</div>
-	<h3 class="zh">每一种信息，都有它最合适的展现方式。</h3>
-	<h3 class="en">For every kind of message, there is a way to display.</h3>
+	<h3>For every kind of message, there is a way to display.</h3>
 <div id='slg_log'>
 	<div id="slg">
-	<div class="zh">
-	<h5>特色</h5>
-	<ol>
-	<li>快速将您收集的内容链接分享给他人，变成在线书签</li>
-	<li>只需浏览器，不对任何厂商、平台、插件产生依赖,无需任何插件</li>
-	<li>操作简单，无需学习</li>
-	<li>公开、共享，适合需要分享、推广的内容</li>
-	<li>支持上传已有的书签</li>
-	<li>无联系，用户名可以任意取，如果不在页面提供联系信息，没有任何人能联系您</li>
-	</ol>
-	</div>
-	<div class="en">
 	<h5>Feature</h5>
 	<ol>
 		<li>Quickly share links to your collected content to others</li>
@@ -221,31 +165,27 @@ window.onload=function(){
 		<li>connectionless, username can be random letters. If not provided in your own bookmark page, no one can contact</li>
 	</ol>
 	</div>
-	</div>
 	<div id="log">
 		<form id="form" ENCTYPE="multipart/form-data" method="post" onsubmit="return false">
 			<div id='rd'>
-				<input type="radio" name="way" value="l" checked required><span class="en">login</span><span class="zh">登录</span>
-				<input type="radio" name="way" value="r" required><span class="en">sign up</span><span class="zh">注册</span>
+				<input type="radio" name="way" value="l" checked required>login
+				<input type="radio" name="way" value="r" required>sign up
 			</div>
-			<label class="en">username</label> <label class="zh">用户名</label>
+			<label class="en">username</label> 
 			<input type="text" name="username" value="" required maxlength=12>
 			<div id="tips">
 			<p class="en ntc">5 to 12 characters</p>
-			<p class="zh ntc">5至12个字符</p>
 			</div>
-			<label class="en">password</label> <label class="zh">密码</label>
+			<label class="en">password</label> 
 			<input type="password" name="pwd" value="" required maxlength=12>
 			<div id="cfm">
 			<p class="en ntc">5 to 12 characters (at least an alphabet,number and special char)</p>
-			<p class="zh ntc">5至12个字符(至少包含一个字母、数字及特殊符号)</p>
 				<label class="en">Enter password again to confirm</label>
-				<label class="zh">再次输入密码以确认</label>
 				<input type="password" name="pwd2" value="">
 			</div>
 			<h3 id="errmsg" style="color: red"></h3>
-			<button onclick="Up()"><span class="en">submit</span><span class="zh">提交</span></button>
-			<a href="/password.html"><span class="en">forget password</span> <span class="zh">忘记密码</span></a>
+			<button onclick="Up()">submit</button>
+			<a href="/password.html">forget password</a>
 		</form>
 	</div>
 </div>

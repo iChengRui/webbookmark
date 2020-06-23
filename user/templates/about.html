@@ -6,77 +6,9 @@
 <style>
 div.zh,div.en{display:none;flex-direction:column;}
 </style>
-<script>
-	var lang;
-	
-	function ch_lang() {
-			let e2;
-			let e = window.event.target;
-			e.style.color='white';
-			e.style.background='black';
-			lang = e.getAttribute('id');
-			let d_zh=document.getElementsByClassName("zh")[0];
-			let d_en=document.getElementsByClassName("en")[0];
-			switch (lang) {
-			case 'zh':
-				e2=document.getElementById("en");	
-				d_zh.style.display="flex";
-				d_en.style.display="none";
-				break;
-			case 'en':
-				e2=document.getElementById("zh");	
-				d_en.style.display="flex";
-				d_zh.style.display="none";
-				break;
-			}
-			e2.style.color='black';
-			e2.style.background='white';
-		}
-	
-	
-	function get_default_lang(){
-		let la=navigator.language||navigator.userLanguage;
-		la=la.substr(0, 2);
-		lang='zh';
-		if(la != 'zh'){
-			lang='en';
-		}
-		let e=document.getElementsByClassName(la)[0];
-		e.style.display="flex";
-	}
-	
-	window.onload=function(){
-		get_default_lang();
-		document.getElementById(lang).click();
-		
-	}
-</script>
 </head>
-
-
 <body>
-<div id="lg">
-	<button id="en" onclick="ch_lang();">English</button>
-	<button id="zh" onclick="ch_lang();">中文</button>
-</div>
-<div class="zh">
-<p>本网站用于网络链接的收集与分享，可以通过手机浏览器在线操作，从而实现跨平台（可以在PC端、手机端、平板电脑等任何包含web浏览器的工具）的管理，且不必依赖浏览器。同时也可以方便的将自己的书签分享给他人。</p>
-<h5>优势</h5>
-<ul>
-<li>跨平台、跨浏览器，不对任何厂商的工具产生依赖，实现真正的自主</li>
-<li>可分享，或者说对所有人可见</li>
-<li>免费</li>
-<li>操作简单、支持上传已有的（即从浏览器导出的html格式的）书签</li>
-<li>无联系，用户名可以任意取，如果不在自己的页面提供联系信息，没有任何人能联系到您，包括网站管理员</li>
-</ul>
-<h5>劣势</h5>
-<ul>
-<li>书签的所有内容都是公开的，可以被其他人看见</li>
-<li>因为是通过网络存储的，稳定性没有浏览器自带的书签好，甚至可能因为服务器或网络问题导致更新的内容保存失败，<a href="/preservation.html">补救措施</a></li>
-<li>需要登录，有一定的时间消耗；如果仅浏览书签，可以使用分享链接而无需登录</li>
-<li>对于非书签的所有者，有广告</li>
-</ul>
-</div>
+
 <div class="en">
 <p>This website is used for the collection and sharing of web links and can be operated online through any web browser.Thus, cross-platform and independent of specific browser. It is also convenient to share your bookmarks with others.</p>
 <h5>Advantage</h5>

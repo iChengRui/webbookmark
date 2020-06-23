@@ -68,7 +68,7 @@ width:100%;
 	trans=false, // 是否使用翻译内容
 	xmlhttp=new XMLHttpRequest();
 	
-	const root=new Map([['zh',"抱歉，您访问的书签已经被作者删除或书签链接有误"],['en',"Sorry，the bookmark does not exist, it might be removed by the owner or it's name is not correct."]]);
+	const root="Sorry，the bookmark does not exist, it might be removed by the owner or it's name is not correct.";
 
 	function get_default_lang(){
 		let la=navigator.language||navigator.userLanguage;
@@ -87,53 +87,20 @@ width:100%;
 			trans=false;
 			}
 			else{
-			ifm.innerHTML=root.get(lang);
+			ifm.innerHTML=root;
 			}
 		}
 	}	
-	
-	function ck_lang() {
-			let e2;
-			let e = window.event.target;
-			if(e.nodeName=='DIV'){return;}
-			e.style.color='white';
-			e.style.background='black';
-			lang = e.getAttribute('id');
-			switch (lang) {
-			case 'zh':
-				e2=document.getElementById("en");	
-				$(".en").hide();
-				$(".zh").show();
-				break;
-			case 'en':
-				e2=document.getElementById("zh");	
-				$(".zh").hide();
-				$(".en").show();
-				break;
-			}
-			e2.style.color='black';
-			e2.style.background='white';
-			if(trans){
-				ifm.innerHTML=root.get(lang);
-			}
-		}
-	
 	
 	window.onload=function (){
 		
 		ifm=document.getElementById("ifm");
 		ifm.onclick=menu;
 		
-		// 选择语言
-		var lgc=document.getElementById("lg");	
-		lgc.onclick=ck_lang;
-		get_default_lang();
-		document.getElementById(lang).click();
-		
 		xmlhttp.onreadystatechange=ck_st;
 		let src=location.search.substring(1);
 		if(!src){
-			ifm.innerHTML=root.get(lang);
+			ifm.innerHTML=root;
 			trans=true;
 		}
 		xmlhttp.open("GET",'/c/'+ src,true);
@@ -234,24 +201,14 @@ width:100%;
 	}
 </script>
 <body>
-	<div id="lg">
-			<button id="en">English</button>
-			<button id="zh">中文</button>
-	</div>
-<div id="padder">
-<!-- 用于空出header的高度 -->
-<button ></button>
-</div>
-<h3><span class='zh'>这些链接由公众自由上传，并无安全检验。当打开链接，浏览器提示风险时，请勿打开！</span><span class='en'>These links are created by public WITHOUT safety-check. If ALARMING while opening, CLOSE THE PAGE.</span></h3>
-	<div id="ifm" ></div>
-	
 
+<h3>These links are created by public WITHOUT safety-check. If ALARMING while opening, CLOSE THE PAGE.</h3>
+	<div id="ifm" ></div>
 	<div id="foldermenu">
-		<div id="expandfolder" onclick="xpd(this);"><span class='zh'>展开文件夹</span><span class='en'>expand</span></div>
-		<div id="expandall" onclick="xpda(this);"><span class='zh'>展开全部</span><span class='en'>expand all</span></div>
-		<div id="collapsefolder" onclick="cps(this);"><span class='zh'>折叠文件夹</span><span class='en'>collapse</span></div>
-		<div id="collapseall" onclick="cpsa(this);"><span class='zh'>折叠全部</span><span class='en'>collapse all</span></div>
+		<div id="expandfolder" onclick="xpd(this);">expand<span class='en'>expand</span></div>
+		<div id="expandall" onclick="xpda(this);">expand all</div>
+		<div id="collapsefolder" onclick="cps(this);">collapse</div>
+		<div id="collapseall" onclick="cpsa(this);">collapse all</div>
 	</div>
-	
 </body>
 </html>
