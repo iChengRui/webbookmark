@@ -150,7 +150,7 @@ def udelete(req):
     user.delete()
     fname = uname_m_fname(uname)
     try:
-        r(MEDIA_ROOT + fname)
+        r(MEDIA_ROOT + fname+".gz")
     except Exception:
         pass
     return HttpResponse(SUCCESS, content_type='application/json')
@@ -198,9 +198,7 @@ def verify_html(str_l):
     html = ht.fragments_fromstring(fragm)
     if len(html) != 1:
         raise ValueError
-#     f=open("/media/data/编程/Project/webbookmark/backups/modify3",'wb')
-#     f.write(fragm)
-#     f.close()
+    
     html = html[0]
     container.append(html)
     child_cnt.append(1)
@@ -304,14 +302,15 @@ def verify_bookmark(cnt):
     # <!DOCTYPE NETSCAPE-Bookmark-file-1> edge
     # <!DOCTYPE NETSCAPE-Bookmark-file-1> IE
     # <!DOCTYPE NETSCAPE-Bookmark-file-1> firefox
+    # <!DOCTYPE NETSCAPE-Bookmark-file-1> chrome 
     if (not html_content_len 
-        or html_content[:35]!="<!DOCTYPE NETSCAPE-Bookmark-file-1>"):
+        or html_content[0][:35]!=b"<!DOCTYPE NETSCAPE-Bookmark-file-1>"):
         raise ValueError
     tag_id_cnt=1
     header_level = 0
     j = 0
     while(j < html_content_len):
-        i = html_content[j].strip(b'  \n')
+        i = html_content[j].strip()
         if len(i) < 3:
             j += 1
             continue
@@ -353,7 +352,7 @@ def verify_bookmark(cnt):
                 html_frag.append(h5.encode("utf8")) 
                 html_frag.append(endheader) 
                 j += 1
-                i = html_content[j].strip(b'  \n')
+                i = html_content[j].strip()
                 if i !=b"<DL><p>":
                     raise ValueError
                 header_level += 1
@@ -377,7 +376,7 @@ def verify_bookmark(cnt):
             html_frag.append(endheader) 
             while True:
                 j += 1
-                i = html_content[j].strip(b'  \n')
+                i = html_content[j].strip()
                 if not i:
                     continue
                 elif i != b"<DL><p>":
@@ -401,6 +400,9 @@ def fupdate(req):
     """
     uf = req.FILES["upfile"]
     content = uf.read().strip()
+    # utf8 BOM 开头三个字节
+    if content[:3]==b'\xef\xbb\xbf':
+        content=content[3:]
     uf.close()
     if len(content) < 19:
         return HttpResponse(LEN_ERR, content_type='application/json')
@@ -418,7 +420,6 @@ def fupdate(req):
         # 删除隐藏所使用的style字符
         content = gc_style.sub(b'', content)
         
-        str_l = [content]
         if content_update(str_l, req.user.username):
             return HttpResponse('"' + str_l[1] + '"', content_type='application/json')
         else:

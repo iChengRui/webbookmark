@@ -48,8 +48,7 @@ body {font-family:Verdana,Lucida,Arial,Helvetica,"宋体",sans-serif;}
 }
 h5{margin:0; padding:0;}
 li,ul{list-style:none;}
-button{border-radius: 50%}
-#cntn{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:space-between;}
+#cntn{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:right;}
 #msgfbk{display:flex;flex-direction:row; flex-wrap:wrap; justify-content:center;}
 #shrinfo {background-color: lightcyan;margin: 0;}
 #ifm{ width:100%;}
@@ -277,7 +276,7 @@ function escapeHtml (string) {
 							rm_a("#ifm li");
 							$("#shr").html(shr_base+src);
 							ok=true;
-							$("upf").hide();
+							$("#upf").hide();
 							chg_rcd=[];
 							chd=false;
 							locked=false;
@@ -309,7 +308,7 @@ function escapeHtml (string) {
 	}
 
 	function sendtobackground() {
-		if(chd && chg_rcd.length>=batch||w_close||force_sendback){
+		if(chd && chg_rcd.length>0&&(chg_rcd.length>=batch||w_close||force_sendback)){
 			locked=true;
 			let up= JSON.stringify(chg_rcd);
 			
@@ -454,8 +453,7 @@ function escapeHtml (string) {
 		src=location.search.substring(1);
 		let src_len=src.length;
 		let v=ck_v('login');
-		let v_len=v.length;
-		if(!src_len || !v_len || src.substr(0,v_len)!=v) {
+		if(!v||!src_len || !v.length|| src.substr(0,v.length)!=v) {
 			location.href='index.html';
 			return;
 			}
@@ -474,6 +472,7 @@ function escapeHtml (string) {
 		$("#shrinfo").hide();
 		$("span.shroff").show();
 		$("span.shron").hide();
+		shron=false;
 	}
 	
 	// 菜单处理
@@ -862,7 +861,7 @@ function escapeHtml (string) {
 	<div id='feedback'>
 	<div id='msgfbk'>
 	</div>
-	<button id='clsfbk' onclick="cls_fbk()">Close</button>
+	<div style="width:100%;text-align:center"><button id='clsfbk' onclick="cls_fbk()">Close</button></div>
 	</div>
 
 	<div id="foldermenu">

@@ -6,6 +6,7 @@
 <style type="text/css">
 html,body{height: 100%;display: flex;justify-content: space-around;flex-direction: column;}
 li{margin: 1ex 0;}
+a{ text-decoration:none}
 #slg_log{
 display:flex;
 flex-direction:row;
@@ -27,6 +28,10 @@ align-items:start;
 
 #form > *{margin:1ex;}
 
+footer{
+	display: flex;
+	justify-content: space-evenly;
+}
 #slg{
 display:inline-block;
 width:max-content;
@@ -171,16 +176,16 @@ label{font-size:large;}
 				<input type="radio" name="way" value="l" checked required>login
 				<input type="radio" name="way" value="r" required>sign up
 			</div>
-			<label class="en">username</label> 
+			<label >username</label> 
 			<input type="text" name="username" value="" required maxlength=12>
 			<div id="tips">
-			<p class="en ntc">5 to 12 characters</p>
+			<p class="ntc">5 to 12 characters</p>
 			</div>
-			<label class="en">password</label> 
+			<label >password</label> 
 			<input type="password" name="pwd" value="" required maxlength=12>
 			<div id="cfm">
-			<p class="en ntc">5 to 12 characters (at least an alphabet,number and special char)</p>
-				<label class="en">Enter password again to confirm</label>
+			<p class="ntc">5 to 12 characters (at least an alphabet,number and special char)</p>
+				<label>Enter password again to confirm</label>
 				<input type="password" name="pwd2" value="">
 			</div>
 			<h3 id="errmsg" style="color: red"></h3>
@@ -189,8 +194,6 @@ label{font-size:large;}
 		</form>
 	</div>
 </div>
-<h3></h3>
-<h3></h3>
-<div></div>
+<footer><a href="/about.html">About</a><a href="/partner.html">Help Needed!</a></footer>
 </body>
 </html>
