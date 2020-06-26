@@ -17,7 +17,6 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, DataError, transaction
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.contrib.messages.constants import SUCCESS
-from django.conf.global_settings import MEDIA_ROOT
 
 from . import models 
 from .models import MyUser, IPRecord
@@ -37,6 +36,7 @@ U_RPT_ERR = '4'  # 用户名重复
 LEN_ERR = '5'  # 内容超出允许的最大长度
 CNT_ROOT_ERR = '6'  # 出现多于一个根
 FORMAT_ERR = '7'  # 上传文件格式错误
+LEN_ERR_NOTICE = '8'  # 内容超出允许的最大长度,考虑用户临时超标，予以提醒，最多不可超过1.5倍
 
 # 至少一个字母，一个数字，一个特殊字符
 pwdpattern = r'^(?=.*?[A-Za-z])(?=.*?[0-9])(?=.*?[^A-Za-z0-9]).{5,12}$'
@@ -496,7 +496,7 @@ def piece_cupdate(req):
     
     with gzip.open(fname, 'rt', 6, encoding='utf8') as f:
         old_c.append(f.read())
-
+    max_len=len(old_c[0])
     for i in c:
         f_count += 1
         if not (isinstance(i, list) and len(i)>1 
@@ -692,10 +692,18 @@ def piece_cupdate(req):
             del old_c[tail]
             old_c[tail:tail] = itm0, itm1
             del old_c[header:tail + 1]
-            
+    res="".join(old_c)
+    now_len=len(res)
+    if (max_len>CONTENT_MAX_LEN and now_len>CONTENT_MAX_LEN 
+        or now_len>1.5*CONTENT_MAX_LEN):
+        return HttpResponse(FORMAT_ERR, content_type='application/json')
+    
     with gzip.open(fname, 'wt', 6, encoding='utf8') as f:
+           f.write(res)
 
-           f.write("".join(old_c)) 
+    if len(res)>CONTENT_MAX_LEN:
+        return HttpResponse(LEN_ERR_NOTICE, content_type='application/json')
+    
     return HttpResponse(dumps(err_itm), content_type='application/json')
 
 

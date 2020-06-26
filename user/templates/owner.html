@@ -2,6 +2,8 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta content="bookmark,share,online,free，anonymous，cross platform" name="keywords"> 
+<meta content="online bookmark for share with the public" name="description">
 <title>webbookmark-owner</title>
 <style type="text/css">
 a{ text-decoration:none}
@@ -59,21 +61,16 @@ table{
 	 border-width: 2px;
 	 border-collapse: collapse;
 	}
-	td {
-	  border-width: 1px;
-	  border-style: solid none;
-	  text-align:center;
+td {
+	border-width: 1px;
+	border-style: solid none;
+	text-align:center;
 	}
 </style>
-
-<!--  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
--->
-
-<script src="/jQuery2.1.4.js"></script>
-
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 <script>
 	var matchHtmlRegExp = /["'&<>]/
-	var r=new RegExp("^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?/.=]+$");
+	var r=new RegExp("^[A-Za-z]+://[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&?#/.=]+$");
 	
 function escapeHtml (string) {
 	  var str = '' + string
@@ -152,6 +149,7 @@ function escapeHtml (string) {
 	const shr_base="http://127.0.0.1/visitor.html?";
 	const up_max=65536; //最多字符数 2**16
 	const up_len_err='at most 65536(2^16) chars are allowed,remove unnecessary bookmarks or use shorter name.If in a hurry,save the page locally.';
+	const up_len_ntc='Uploaded chars exceed limit,However it will be saved if there is no wrong operation.You must remove some bookmarks to get space,otherwise,no further change can be made.';
 	const url_err='url is blank or contains illegal chars & fomart';
 	const svr_err='server internal error,all updated content may be lost. With computer, you can save those bookmark locally and steps are in "help" page;for other devices,there is no remedy. Please email to 1575658778@qq.com for repair.';
 	const name_err='name is blank';
@@ -333,45 +331,52 @@ function escapeHtml (string) {
 						location.href='index.html';
 						return;
 					}
-					failure.push("<p>");
-					failure.push(svr_err+itmf_err);
-					failure.push("</p>");
-					failure.push('<table><tbody><tr><th>Name</th><th>action</th><th>URL</th></tr>');
-					for(;i<l_xhr;i++){
-						j=-1;
-						if(xhr[i]){
-							for(i=0;i<l_chg_rcd;i++){
-								if(chg_rcd[i][0]=xhr[i]){
-									j=i;
-									break;
-								}
-							}
-							if(j!=-1){
-								if(chg_rcd[j][1]>3){
-									if(chg_rcd[j][1]==6){
-										tag_name='id'+chg_rcd[j][0];
-									}else{
-										tag_name=chg_rcd[j][2];
-									}
-									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(chg_rcd[j][1])+"</td><td></td></tr>");
-								}else {
-									if(chg_rcd[j][1]==3){
-										tag_name='id'+chg_rcd[j][0];
-									}else{
-										tag_name=chg_rcd[j][2];
-									}
-									let href='';
-									if(chg_rcd[j].length>3){
-										href=chg_rcd[j][3];
-									}
-									failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(chg_rcd[j][1])+"</td><td>"+href+"</td></tr>");
-								}
-							}
-							// TODO wait for decision delete or not.
-							// remove_used_id(xhr[i]);
-						}
+					if(xhr==5){
+						failure.push("<p>"+up_len_err+"</p>");
 					}
-					failure.push("</tbody></table>");
+					else if(xhr==8){
+						failure.push("<p>"+up_len_ntc+"</p>");
+					}else{
+						failure.push("<p>");
+						failure.push(svr_err+itmf_err);
+						failure.push("</p>");
+						failure.push('<table><tbody><tr><th>Name</th><th>action</th><th>URL</th></tr>');
+						for(;i<l_xhr;i++){
+							j=-1;
+							if(xhr[i]){
+								for(i=0;i<l_chg_rcd;i++){
+									if(chg_rcd[i][0]=xhr[i]){
+										j=i;
+										break;
+									}
+								}
+								if(j!=-1){
+									if(chg_rcd[j][1]>3){
+										if(chg_rcd[j][1]==6){
+											tag_name='id'+chg_rcd[j][0];
+										}else{
+											tag_name=chg_rcd[j][2];
+										}
+										failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(chg_rcd[j][1])+"</td><td></td></tr>");
+									}else {
+										if(chg_rcd[j][1]==3){
+											tag_name='id'+chg_rcd[j][0];
+										}else{
+											tag_name=chg_rcd[j][2];
+										}
+										let href='';
+										if(chg_rcd[j].length>3){
+											href=chg_rcd[j][3];
+										}
+										failure.push("<tr><td>"+tag_name +"</td><td>"+action_err.get(chg_rcd[j][1])+"</td><td>"+href+"</td></tr>");
+									}
+								}
+								// TODO wait for decision delete or not.
+								// remove_used_id(xhr[i]);
+							}
+						}
+						failure.push("</tbody></table>");
+					}
 					showfbk(failure.join(""));
 				}
 			}).fail(function(xhr, status, error) {
